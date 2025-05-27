@@ -1,0 +1,38 @@
+{
+  "navigation": {
+    "home": "الرئيسية",
+    "products": "المنتجات",
+    "about": "من نحن",
+    "contact": "اتصل بنا"
+  },
+  "product": {
+    "notFound": "المنتج غير موجود",
+    "colors": "الألوان",
+    "size": "المقاس",
+    "quantity": "الكمية",
+    "addToCart": "أضف إلى السلة",
+    "freeDelivery": "توصيل مجاني",
+    "deliveryAvailability": "أدخل الرمز البريدي للتحقق من توفر التوصيل",
+    "returnPolicy": "سياسة الإرجاع",
+    "returnDetails": "إرجاع مجاني خلال 30 يوم. تفاصيل",
+    "inStock": "متوفر",
+    "reviews": "تقييمات"
+  },
+  "common": {
+    "details": "تفاصيل"
+  },
+  "contact": {
+    "callToUs": "اتصل بنا",
+    "available": "نحن متاحون على مدار الساعة، 7 أيام في الأسبوع",
+    "phone": "الهاتف",
+    "writeToUs": "اكتب لنا",
+    "fillForm": "املأ نموذجنا وسنتواصل معك خلال 24 ساعة",
+    "emails": "البريد الإلكتروني",
+    "support": "الدعم",
+    "yourName": "اسمك *",
+    "yourEmail": "بريدك الإلكتروني *",
+    "yourPhone": "هاتفك *",
+    "yourMessage": "رسالتك",
+    "sendMessage": "إرسال الرسالة"
+  }
+} 

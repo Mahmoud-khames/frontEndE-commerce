@@ -2,10 +2,12 @@ import type { NextConfig } from "next";
 import path from 'path';
 
 const nextConfig: NextConfig = {
-  // Remove 'standalone' output for Vercel deployment
-  // output: 'standalone',
-  distDir: 'build',
-  basePath: process.env.NODE_ENV === 'production' ? '/frontEndE-commerce' : '',
+  // Remove distDir for Vercel deployment
+  // distDir: 'build',
+  
+  // Remove basePath for Vercel deployment or adjust it
+  // basePath: process.env.NODE_ENV === 'production' ? '/frontEndE-commerce' : '',
+  
   trailingSlash: true,
   images: {
     domains: ["via.placeholder.com", "images.pexels.com", "localhost"],
@@ -32,15 +34,9 @@ const nextConfig: NextConfig = {
     return config;
   },
   generateBuildId: async () => {
-    // You can use a git hash or any other consistent identifier
     return process.env.BUILD_ID || 'your-custom-build-id'
   },
 };
 
 export default nextConfig;
-
-
-
-
-
 

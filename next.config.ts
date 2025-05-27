@@ -2,8 +2,8 @@ import type { NextConfig } from "next";
 import path from 'path';
 
 const nextConfig: NextConfig = {
-  // استخدام output: 'standalone' بدلاً من 'export'
-  output: 'standalone',
+  // Remove 'standalone' output for Vercel deployment
+  // output: 'standalone',
   distDir: 'build',
   basePath: process.env.NODE_ENV === 'production' ? '/frontEndE-commerce' : '',
   trailingSlash: true,
@@ -31,9 +31,14 @@ const nextConfig: NextConfig = {
     
     return config;
   },
+  generateBuildId: async () => {
+    // You can use a git hash or any other consistent identifier
+    return process.env.BUILD_ID || 'your-custom-build-id'
+  },
 };
 
 export default nextConfig;
+
 
 
 

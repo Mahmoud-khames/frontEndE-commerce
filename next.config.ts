@@ -36,7 +36,17 @@ const nextConfig: NextConfig = {
   generateBuildId: async () => {
     return process.env.BUILD_ID || 'your-custom-build-id'
   },
+  // Add this to handle 404 errors
+  async rewrites() {
+    return [
+      {
+        source: '/:path*',
+        destination: '/',
+      },
+    ];
+  },
 };
 
 export default nextConfig;
+
 

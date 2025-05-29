@@ -1,5 +1,3 @@
-
-
 import CategoriesList from "@/components/Home/Categories/CategoriesList";
 import ImgSale from "@/components/Home/ImgSale/ImgSale";
 import OurProductList from "@/components/Home/ourProductList/OurProductList";

@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { getCurrentLocale } from "@/lib/getCurrentLocale"
 
-export default async function NotFound() {
+export default async function NotFoundPage() {
   const locale = await getCurrentLocale()
   
   return (

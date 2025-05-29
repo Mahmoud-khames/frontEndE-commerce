@@ -87,10 +87,10 @@ export const fetchProducts = createAsyncThunk(
     try {
       const { filters } = (getState() as any).products;
       const apiURL = process.env.NEXT_PUBLIC_API_URL || '';
-      
+      console.log("apiURL",apiURL)
       // If applyFilters is false, fetch all products without filters
       if (options.applyFilters === false) {
-        const response = await axios.get(`${apiURL}api/product/filter?limit=100`);
+        const response = await axios.get(`${apiURL}/api/product/filter?limit=100`);
         return response.data;
       }
       
@@ -104,7 +104,7 @@ export const fetchProducts = createAsyncThunk(
       
       console.log("Fetching products with params:", queryParams.toString());
       
-      const response = await axios.get(`${apiURL}api/product/filter?${queryParams.toString()}`);
+      const response = await axios.get(`${apiURL}/api/product/filter?${queryParams.toString()}`);
       return response.data;
     } catch (error: any) {
       console.error("Error fetching products:", error);
@@ -119,7 +119,7 @@ export const fetchAvailableFilters = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const apiURL = process.env.NEXT_PUBLIC_API_URL || '';
-      const response = await axios.get(`${apiURL}api/product/available-filters`);
+      const response = await axios.get(`${apiURL}/api/product/available-filters`);
       return response.data.filters;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || "Failed to fetch filters");
@@ -135,7 +135,7 @@ export const searchProducts = createAsyncThunk(
       const apiURL = process.env.NEXT_PUBLIC_API_URL || '';
       
       // Make a direct search request to the correct endpoint
-      const response = await axios.get(`${apiURL}api/product/search?query=${encodeURIComponent(searchQuery)}`);
+      const response = await axios.get(`${apiURL}/api/product/search?query=${encodeURIComponent(searchQuery)}`);
       
       console.log("Search response:", response.data);
       

@@ -9,7 +9,7 @@ export default function Error({
 }: {
   error: Error & { digest?: string }
   reset: () => void
-}) {
+}) {  
   useEffect(() => {
     console.error(error)
   }, [error])
@@ -24,7 +24,8 @@ export default function Error({
           <span className="mx-2">/</span> 
           <span>Error</span>    
         </nav>
-      </div>
+      </div>  
+
 
       <div className="text-center">
         <h1 className="text-[72px] md:text-[120px] font-bold text-[#000000] leading-tight">

@@ -3,7 +3,6 @@ import axios from "axios";
 // إعداد الـ API مع معالجة أفضل للأخطاء
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000",
-  timeout: 15000, // زيادة مهلة الانتظار لتجنب الأخطاء المؤقتة
 });
 
 // Auth endpoints

@@ -174,36 +174,52 @@ export function AddProducts({ t, locale }: { t: any; locale: string }) {
         formDataToSend.append("oldProductPrice", data.oldProductPrice);
         // إضافة قيمة الخصم الثابت
         if (parseFloat(data.productPrice) > parseFloat(data.oldProductPrice)) {
-          const fixedDiscount = parseFloat(data.productPrice) - parseFloat(data.oldProductPrice);
+          const fixedDiscount =
+            parseFloat(data.productPrice) - parseFloat(data.oldProductPrice);
           formDataToSend.append("productDiscount", fixedDiscount.toString());
         }
       } else if (discountType === "percentage") {
         // إرسال النسبة المئوية للخصم
         if (data.productDiscountPercentage) {
-          formDataToSend.append("productDiscountPercentage", data.productDiscountPercentage);
+          formDataToSend.append(
+            "productDiscountPercentage",
+            data.productDiscountPercentage
+          );
         }
-        
+
         // إرسال قيمة الخصم
         if (data.productDiscount) {
           formDataToSend.append("productDiscount", data.productDiscount);
         }
-        
+
         // إرسال تواريخ الخصم
         if (discountDates) {
           if (data.productDiscountStartDate) {
-            formDataToSend.append("productDiscountStartDate", data.productDiscountStartDate);
+            formDataToSend.append(
+              "productDiscountStartDate",
+              data.productDiscountStartDate
+            );
           }
           if (data.productDiscountEndDate) {
-            formDataToSend.append("productDiscountEndDate", data.productDiscountEndDate);
+            formDataToSend.append(
+              "productDiscountEndDate",
+              data.productDiscountEndDate
+            );
           }
         } else {
           // إذا لم يتم تحديد تواريخ، نضع تواريخ افتراضية (من اليوم ولمدة شهر)
           const today = new Date();
           const nextMonth = new Date();
           nextMonth.setMonth(today.getMonth() + 1);
-          
-          formDataToSend.append("productDiscountStartDate", today.toISOString());
-          formDataToSend.append("productDiscountEndDate", nextMonth.toISOString());
+
+          formDataToSend.append(
+            "productDiscountStartDate",
+            today.toISOString()
+          );
+          formDataToSend.append(
+            "productDiscountEndDate",
+            nextMonth.toISOString()
+          );
         }
       }
     } else {
@@ -315,6 +331,7 @@ export function AddProducts({ t, locale }: { t: any; locale: string }) {
         setOpen(false);
         router.refresh();
       } catch (error: any) {
+        console.log(error);
         toast.error(error.message || t.common.error);
       }
     });
@@ -452,10 +469,18 @@ export function AddProducts({ t, locale }: { t: any; locale: string }) {
                                 onChange={(e) => {
                                   field.onChange(e);
                                   // حساب قيمة الخصم تلقائيًا عند تغيير النسبة المئوية
-                                  const percentage = parseFloat(e.target.value) || 0;
-                                  const price = parseFloat(form.getValues("productPrice")) || 0;
-                                  const discountAmount = price * (percentage / 100);
-                                  form.setValue("productDiscount", discountAmount.toString());
+                                  const percentage =
+                                    parseFloat(e.target.value) || 0;
+                                  const price =
+                                    parseFloat(
+                                      form.getValues("productPrice")
+                                    ) || 0;
+                                  const discountAmount =
+                                    price * (percentage / 100);
+                                  form.setValue(
+                                    "productDiscount",
+                                    discountAmount.toString()
+                                  );
                                 }}
                               />
                             </FormControl>
@@ -478,11 +503,19 @@ export function AddProducts({ t, locale }: { t: any; locale: string }) {
                                 onChange={(e) => {
                                   field.onChange(e);
                                   // حساب النسبة المئوية تلقائيًا عند تغيير قيمة الخصم
-                                  const discountAmount = parseFloat(e.target.value) || 0;
-                                  const price = parseFloat(form.getValues("productPrice")) || 0;
+                                  const discountAmount =
+                                    parseFloat(e.target.value) || 0;
+                                  const price =
+                                    parseFloat(
+                                      form.getValues("productPrice")
+                                    ) || 0;
                                   if (price > 0) {
-                                    const percentage = (discountAmount / price) * 100;
-                                    form.setValue("productDiscountPercentage", percentage.toFixed(2));
+                                    const percentage =
+                                      (discountAmount / price) * 100;
+                                    form.setValue(
+                                      "productDiscountPercentage",
+                                      percentage.toFixed(2)
+                                    );
                                   }
                                 }}
                               />
@@ -539,17 +572,22 @@ export function AddProducts({ t, locale }: { t: any; locale: string }) {
                       )}
 
                       {/* عرض السعر بعد الخصم */}
-                      {form.watch("productDiscountPercentage") && form.watch("productPrice") && (
-                        <div className="p-3 bg-gray-50 rounded-md">
-                          <p className="text-sm font-medium">{t.admin.calculatedPrice}:</p>
-                          <p className="text-lg font-bold text-secondary">
-                            {(
-                              parseFloat(form.getValues("productPrice")) -
-                              parseFloat(form.getValues("productDiscount") || "0")
-                            ).toFixed(2)}
-                          </p>
-                        </div>
-                      )}
+                      {form.watch("productDiscountPercentage") &&
+                        form.watch("productPrice") && (
+                          <div className="p-3 bg-gray-50 rounded-md">
+                            <p className="text-sm font-medium">
+                              {t.admin.calculatedPrice}:
+                            </p>
+                            <p className="text-lg font-bold text-secondary">
+                              {(
+                                parseFloat(form.getValues("productPrice")) -
+                                parseFloat(
+                                  form.getValues("productDiscount") || "0"
+                                )
+                              ).toFixed(2)}
+                            </p>
+                          </div>
+                        )}
                     </div>
                   )}
                 </div>
@@ -618,7 +656,11 @@ export function AddProducts({ t, locale }: { t: any; locale: string }) {
                       </FormControl>
                       <SelectContent className="bg-white">
                         {categories?.map((category: any) => (
-                          <SelectItem className="hover:bg-secondary hover:text-white" key={category._id} value={category._id}>
+                          <SelectItem
+                            className="hover:bg-secondary hover:text-white"
+                            key={category._id}
+                            value={category._id}
+                          >
                             {category.name}
                           </SelectItem>
                         ))}

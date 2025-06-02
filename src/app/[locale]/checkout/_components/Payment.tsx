@@ -65,7 +65,7 @@ export default function Payment({trans, locale}: {trans: any, locale: string}) {
             >
               <div className="flex items-center justify-center gap-2">
                 <Image
-                  src={`${apiURL}${item.product.productImage}`}
+                  src={`${item.product.productImage}`}
                   alt={item.product.productName}
                   width={54}
                   height={54}

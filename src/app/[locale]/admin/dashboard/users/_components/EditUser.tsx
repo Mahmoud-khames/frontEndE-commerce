@@ -71,7 +71,7 @@ export default function EditUser({
     if (user.userImage) {
       setPreviewImage(
         user.userImage.startsWith('/')
-          ? `${apiURL}${user.userImage}`
+          ? `${user.userImage}`
           : '/user.jpg'
       );
     }
@@ -86,47 +86,44 @@ export default function EditUser({
     }
   };
 
-  // Form submission handler
-  const onSubmit = (data: z.infer<typeof userSchema>) => {
-    const formDataToSend = new FormData();
+  const onSubmit = async (data: z.infer<typeof userSchema>) => {
+    setIsPending(true);
     
-    // Add user ID
-    formDataToSend.append('uId', user._id);
-    
-    // Add text data
-    formDataToSend.append('firstName', data.firstName);
-    formDataToSend.append('lastName', data.lastName);
-    formDataToSend.append('email', data.email);
-    formDataToSend.append('role', data.role);
-    
-    if (data.phone) {
-      formDataToSend.append('phone', data.phone);
-    }
-    
-    // Add password if provided
-    if (data.password) {
-      formDataToSend.append('password', data.password);
-    } else {
-      // If no new password, send a placeholder to satisfy backend validation
-      formDataToSend.append('password', 'currentpassword');
-    }
-    
-    // Add user image if provided
-    if (data.userImage instanceof File) {
-      formDataToSend.append('userImage', data.userImage);
-    }
-    
-    startTransition(async () => {
-      try {
-        const response = await updateUser(formDataToSend);
-        toast.success(response.data.message || t.admin.userUpdatedSuccessfully || "User updated successfully");
-        dispatch(fetchUsers());
-        setOpen(false);
-        router.refresh();
-      } catch (error: any) {
-        toast.error(error.message || t.common.error || "An error occurred");
+    try {
+      const formDataToSend = new FormData();
+      formDataToSend.append("firstName", data.firstName);
+      formDataToSend.append("lastName", data.lastName);
+      formDataToSend.append("email", data.email);
+      formDataToSend.append("phone", data.phone || "");
+      formDataToSend.append("role", data.role);
+      
+      // Only append password if it's not empty
+      if (data.password && data.password.trim() !== "") {
+        formDataToSend.append("password", data.password);
       }
-    });
+      
+      // Add user image if provided
+      if (data.userImage instanceof File) {
+        formDataToSend.append('userImage', data.userImage);
+      }
+      
+      startTransition(async () => {
+        try {
+          const response = await updateUser(formDataToSend, user._id);
+          toast.success(response.data.message || t.admin.userUpdatedSuccessfully || "User updated successfully");
+          dispatch(fetchUsers());
+          setOpen(false);
+          router.refresh();
+        } catch (error: any) {
+          toast.error(error.message || t.common.error || "An error occurred");
+        } finally {
+          setIsPending(false);
+        }
+      });
+    } catch (error: any) {
+      toast.error(error.message || t.common.error || "An error occurred");
+      setIsPending(false);
+    }
   };
 
   return (
@@ -281,4 +278,6 @@ export default function EditUser({
     </Dialog>
   );
 }
+
+
 

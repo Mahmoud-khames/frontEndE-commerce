@@ -1,7 +1,7 @@
 "use client";
 import { XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import Link from "@/components/link";
 
 export default function CancelContent({locale, t}: {locale: string, t: any}) {
   return (

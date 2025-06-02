@@ -63,7 +63,7 @@ export default function ProductCard({
 
   // التعامل مع أخطاء تحميل الصورة
   const handleImageError = () => {
-    console.error(`Error loading image: ${apiURL}${product?.productImage}`);
+    console.error(`Error loading image: ${product?.productImage}`);
     setImageError(true);
   };
 
@@ -148,7 +148,7 @@ export default function ProductCard({
           
           {product.productImage && (
             <Image
-              src={imageError ? '/placeholder-product.jpg' : `${apiURL}${product?.productImage}`}
+              src={imageError ? '/placeholder-product.jpg' : `${product?.productImage}`}
               width={190}
               height={170}
               alt={product?.productName}
@@ -181,32 +181,44 @@ export default function ProductCard({
         </div>
 
         {/* Heart/Eye Icons */}
-        {pathname !== `/${locale}/wishlist` && (
-          <div className="absolute top-2 right-2 flex items-center justify-center gap-2">
-            <div className="flex items-center justify-center flex-col gap-2">
-              <AddToWishList product={product} />
-              <Link href={`/${locale}/products/${product.productSlug}`}>
-                <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center cursor-pointer">
-                  <Eye className="text-black w-6 h-6 hover:text-secondary transition-all duration-300" />
-                </div>
-              </Link>
-            </div>
+        {pathname === `/${locale}/wishlist/` && (
+  <div className="absolute top-2 right-2 flex items-center justify-center gap-2">
+    <div className="flex items-center justify-center flex-col gap-2">
+      <ReamoveFromWishList product={product} />
+      {product.productSlug ? (
+        <Link href={`/${locale}/products/${product.productSlug}`}>
+          <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center cursor-pointer">
+            <Eye className="text-black w-6 h-6 hover:text-secondary transition-all duration-300" />
           </div>
-        )}
-        {pathname === `/${locale}/wishlist` && (
-          <div className="absolute top-2 right-2 flex items-center justify-center gap-2">
-            <div className="flex items-center justify-center flex-col gap-2">
-              <ReamoveFromWishList product={product} />
-              <Link href={`/${locale}/products/${product.productSlug}`}>
-                <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center cursor-pointer">
-                  <Eye className="text-black w-6 h-6 hover:text-secondary transition-all duration-300" />
-                </div>
-              </Link>
-            </div>
+        </Link>
+      ) : (
+        <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center cursor-not-allowed" title="Product slug unavailable">
+          <Eye className="text-gray-500 w-6 h-6" />
+        </div>
+      )}
+    </div>
+  </div>
+)}
+{pathname !== `/${locale}/wishlist/` && (
+  <div className="absolute top-2 right-2 flex items-center justify-center gap-2">
+    <div className="flex items-center justify-center flex-col gap-2">
+      <AddToWishList product={product} />
+      {product.productSlug ? (
+        <Link href={`/${locale}/products/${product.productSlug}`}>
+          <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center cursor-pointer">
+            <Eye className="text-black w-6 h-6 hover:text-secondary transition-all duration-300" />
           </div>
-        )}
+        </Link>
+      ) : (
+        <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center cursor-not-allowed" title="Product slug unavailable">
+          <Eye className="text-gray-500 w-6 h-6" />
+        </div>
+      )}
+    </div>
+  </div>
+)}
         {/* Add to Cart Button (Visible on Hover) */}
-        <div className="absolute bottom-0 left-0 w-full h-10 bg-black text-white text-[16px] font-medium opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+        <div className="absolute bottom-0 left-0 w-full h-10 bg-black text-white text-[16px] font-medium opacity-0 opacity-100 transition-opacity cursor-pointer">
           <AddToCart product={product} disabled={!product.productSizes || !product.productColors} />
         </div>
       </div>

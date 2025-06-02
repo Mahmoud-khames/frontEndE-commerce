@@ -164,7 +164,7 @@ const isAdmin = true;
                   <div className="w-16 h-16 relative bg-gray-100 rounded">
                     {item.product?.productImage && (
                       <Image
-                        src={`${apiURL}${item.product.productImage}`}
+                        src={`${item.product.productImage}`}
                         alt={item.product.productName || 'Product image'}
                         fill
                         className="object-cover rounded"

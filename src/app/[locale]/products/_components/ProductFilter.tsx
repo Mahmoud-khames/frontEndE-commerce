@@ -7,6 +7,7 @@ import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Filter, X } from "lucide-react";
 
 export default function ProductFilter({ t, locale }: { t: any; locale: string }) {
   const dispatch = useAppDispatch();
@@ -244,18 +245,46 @@ export default function ProductFilter({ t, locale }: { t: any; locale: string })
         
         {/* Mobile filter toggle button - only visible on small screens */}
         <button 
-          className="lg:hidden text-sm bg-gray-100 px-2 py-1 rounded"
+          className="lg:hidden text-sm bg-gray-100 px-2 py-1 rounded flex items-center gap-1"
           onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
         >
-          {mobileFiltersOpen ? t.products.hideFilters : t.products.showFilters}
+          {mobileFiltersOpen ? (
+            <>
+              <X size={16} /> {t.products.hideFilters}
+            </>
+          ) : (
+            <Filter/>
+          )}
         </button>
       </div>
       
+      {/* Mobile filter overlay */}
+      {mobileFiltersOpen && (
+        <div className="fixed inset-0  bg-opacity-50 z-40 lg:hidden"
+             onClick={() => setMobileFiltersOpen(false)}></div>
+      )}
+      
       {/* Filter content - collapsible on mobile */}
-      <div className={`space-y-4 sm:space-y-5 ${mobileFiltersOpen ? 'block' : 'hidden lg:block'}`}>
+      <div className={`lg:space-y-4 sm:lg:space-y-5 ${mobileFiltersOpen ? 
+        'fixed inset-y-0 right-0 overflow-hidden w-[85%] max-w-sm bg-white z-50 p-4 overflow-y-auto transform transition-transform duration-300 translate-x-0 ' : 
+        'hidden lg:block'}`}
+      >
+        {/* Mobile filter header */}
+        {mobileFiltersOpen && (
+          <div className="flex justify-between items-center mb-4 pb-2 border-b lg:hidden">
+            <h2 className="font-semibold text-lg">{t.products.filter}</h2>
+            <button 
+              onClick={() => setMobileFiltersOpen(false)}
+              className="p-1 rounded-full hover:bg-gray-100"
+            >
+              <X size={20} />
+            </button>
+          </div>
+        )}
+        
         {/* Price Range */}
         {availableFilters?.priceRange && (
-          <div className="space-y-2 sm:space-y-3">
+          <div className="space-y-2 sm:space-y-3 mb-4">
             <h3 className="font-medium text-sm sm:text-base">{t.products.priceRange}</h3>
             <div className="px-2">
               <Slider
@@ -296,7 +325,7 @@ export default function ProductFilter({ t, locale }: { t: any; locale: string })
         
         {/* Categories */}
         {availableFilters?.categories && availableFilters.categories.length > 0 && (
-          <div className="space-y-2 sm:space-y-3">
+          <div className="space-y-2 sm:space-y-3 mb-4">
             <h3 className="font-medium text-sm sm:text-base">{t.products.categories}</h3>
             <div className="space-y-1 sm:space-y-2 max-h-32 sm:max-h-40 overflow-y-auto pr-1">
               {availableFilters.categories.map((category) => (
@@ -320,7 +349,7 @@ export default function ProductFilter({ t, locale }: { t: any; locale: string })
         
         {/* Colors */}
         {availableFilters?.colors && availableFilters.colors.length > 0 && (
-          <div className="space-y-2 sm:space-y-3">
+          <div className="space-y-2 sm:space-y-3 mb-4">
             <h3 className="font-medium text-sm sm:text-base">{t.products.colors}</h3>
             <div className="flex flex-wrap gap-1 sm:gap-2">
               {availableFilters.colors.map((color) => (
@@ -340,7 +369,7 @@ export default function ProductFilter({ t, locale }: { t: any; locale: string })
         
         {/* Sizes */}
         {availableFilters?.sizes && availableFilters.sizes.length > 0 && (
-          <div className="space-y-2 sm:space-y-3">
+          <div className="space-y-2 sm:space-y-3 mb-4">
             <h3 className="font-medium text-sm sm:text-base">{t.products.sizes}</h3>
             <div className="flex flex-wrap gap-1 sm:gap-2">
               {availableFilters.sizes.map((size) => (
@@ -361,7 +390,7 @@ export default function ProductFilter({ t, locale }: { t: any; locale: string })
         )}
         
         {/* Other filters */}
-        <div className="space-y-2 sm:space-y-3">
+        <div className="space-y-2 sm:space-y-3 mb-6">
           <div className="flex items-center space-x-2">
             <Checkbox
               id="discount"
@@ -405,8 +434,8 @@ export default function ProductFilter({ t, locale }: { t: any; locale: string })
           </div>
         </div>
         
-        {/* Action buttons */}
-        <div className="flex flex-col gap-2 pt-2">
+        {/* Action buttons - sticky on mobile */}
+        <div className={`flex flex-col gap-2 pt-2 ${mobileFiltersOpen ? 'sticky bottom-0 bg-white pb-2' : ''}`}>
           <Button onClick={handleApplyFilters} className="w-full text-xs sm:text-sm py-1.5 sm:py-2">
             {t.products.applyFilters}
           </Button>
@@ -422,4 +451,3 @@ export default function ProductFilter({ t, locale }: { t: any; locale: string })
     </div>
   );
 }
-

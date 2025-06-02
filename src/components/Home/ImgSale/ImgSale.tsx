@@ -75,7 +75,7 @@ export default function ImgSale() {
             <SwiperSlide key={index}>
               <div className="relative w-full h-full">
                 <Image
-                  src={`${apiURL}${image}`}
+                  src={`${image}`}
                   alt={`Slide ${index + 1}`}
                   fill
                   className="object-cover object-center"

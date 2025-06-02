@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import Link from '@/components/link'
 import { getCurrentLocale } from "@/lib/getCurrentLocale"
 
 export default async function NotFound() {

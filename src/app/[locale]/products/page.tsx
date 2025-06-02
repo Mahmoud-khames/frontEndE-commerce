@@ -23,6 +23,8 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 
+// ... (existing imports)
+
 export default async function ProductsPage() {
   const locale = await getCurrentLocale();
   const { t } = await getTrans(locale);
@@ -35,7 +37,7 @@ export default async function ProductsPage() {
       <Suspense fallback={<Loading />}>
         <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
           {/* Sidebar with filters - collapses on mobile */}
-          <div className="w-full lg:w-1/4 mb-4 lg:mb-0 sticky top-20 h-fit">
+          <div className="w-full lg:w-1/4 mb-4 lg:mb-0 lg:sticky lg:top-20 lg:h-fit">
             <ProductFilter t={t} locale={locale} />
           </div>
           

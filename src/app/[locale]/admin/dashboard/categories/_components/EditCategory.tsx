@@ -50,7 +50,7 @@ export default function EditCategory({
   const apiURL = process.env.NEXT_PUBLIC_API_URL;
   
   const [previewImage, setPreviewImage] = useState<string | null>(
-    category.image ? `${apiURL}${category.image}` : null
+    category.image ? `${category.image}` : null
   );
   const [categoryImage, setCategoryImage] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -109,6 +109,7 @@ export default function EditCategory({
       // Close dialog and refresh categories
       setOpen(false);
       dispatch(fetchCategories());
+      router.refresh();
     } catch (error: any) {
       toast.error(error.message || t.common.error);
     } finally {

@@ -76,39 +76,41 @@ export default function AddUser({
     }
   };
 
-  // Form submission handler
-  const onSubmit = (data: z.infer<typeof userSchema>) => {
-    const formDataToSend = new FormData();
+  const onSubmit = async (data: z.infer<typeof userSchema>) => {
+    setIsPending(true);
     
-    // Add text data
-    formDataToSend.append('firstName', data.firstName);
-    formDataToSend.append('lastName', data.lastName);
-    formDataToSend.append('email', data.email);
-    formDataToSend.append('password', data.password);
-    formDataToSend.append('cPassword', data.cPassword);
-    formDataToSend.append('role', data.role);
-    
-    if (data.phone) {
-      formDataToSend.append('phone', data.phone);
-    }
-    
-    // Add user image if provided
-    if (data.userImage instanceof File) {
-      formDataToSend.append('userImage', data.userImage);
-    }
-    
-    startTransition(async () => {
-      try {
-        const response = await registerUser(formDataToSend);
-        toast.success(response.data.message || t.admin.userAddedSuccessfully || "User added successfully");
-        dispatch(fetchUsers());
-        setOpen(false);
-        form.reset();
-        router.refresh();
-      } catch (error: any) {
-        toast.error(error.response?.data?.message || t.common.error || "An error occurred");
+    try {
+      const formDataToSend = new FormData();
+      formDataToSend.append("firstName", data.firstName);
+      formDataToSend.append("lastName", data.lastName);
+      formDataToSend.append("email", data.email);
+      formDataToSend.append("phone", data.phone || "");
+      formDataToSend.append("password", data.password);
+      formDataToSend.append("role", data.role);
+      
+      // Add user image if provided
+      if (data.userImage) {
+        formDataToSend.append("userImage", data.userImage);
       }
-    });
+      
+      startTransition(async () => {
+        try {
+          const response = await registerUser(formDataToSend);
+          toast.success(response.data.message || t.admin.userAddedSuccessfully || "User added successfully");
+          dispatch(fetchUsers());
+          setOpen(false);
+          form.reset();
+          router.refresh();
+        } catch (error: any) {
+          toast.error(error.response?.data?.message || t.common.error || "An error occurred");
+        } finally {
+          setIsPending(false);
+        }
+      });
+    } catch (error: any) {
+      toast.error(error.message || t.common.error || "An error occurred");
+      setIsPending(false);
+    }
   };
 
   return (
@@ -275,3 +277,5 @@ export default function AddUser({
     </Dialog>
   );
 }
+
+

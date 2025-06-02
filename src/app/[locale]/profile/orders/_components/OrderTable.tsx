@@ -6,7 +6,7 @@ import { useAppSelector } from '@/redux/hooks';
 
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
-import Link from 'next/link';
+import Link from '@/components/link';
 import { 
   Table, 
   TableBody, 

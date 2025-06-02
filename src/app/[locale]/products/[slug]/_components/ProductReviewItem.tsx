@@ -355,7 +355,7 @@ if(isLoading){
                         className="relative w-20 h-20 rounded overflow-hidden"
                       >
                         <Image
-                          src={`${apiURL}${image}`}
+                          src={`${image}`}
                           alt={`Review image ${imgIndex + 1}`}
                           fill
                           className="object-cover"

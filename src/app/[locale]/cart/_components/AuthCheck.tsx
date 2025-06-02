@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import CartItems from "./CartItems";
-import Link from "next/link";
+import Link from "@/components/link";
 import { useRouter } from "next/navigation";
 import { ROUTES_MANIFEST } from "next/dist/shared/lib/constants";
 import { Routes } from "@/constants/enums";

@@ -162,71 +162,31 @@ export function AddProducts({ t, locale }: { t: any; locale: string }) {
     }
   };
 
-  // تعديل وظيفة onSubmit لإرسال بيانات الخصم
+  // تعديل وظيفة onSubmit لإرسال بيانات المنتج
   const onSubmit = (data: z.infer<typeof productSchema>) => {
     const formDataToSend = new FormData();
     formDataToSend.append("productName", data.productName);
     formDataToSend.append("productDescription", data.productDescription);
     formDataToSend.append("productPrice", data.productPrice);
-
-    if (data.hasDiscount) {
-      if (discountType === "fixed" && data.oldProductPrice) {
-        formDataToSend.append("oldProductPrice", data.oldProductPrice);
-        // إضافة قيمة الخصم الثابت
-        if (parseFloat(data.productPrice) > parseFloat(data.oldProductPrice)) {
-          const fixedDiscount =
-            parseFloat(data.productPrice) - parseFloat(data.oldProductPrice);
-          formDataToSend.append("productDiscount", fixedDiscount.toString());
-        }
-      } else if (discountType === "percentage") {
-        // إرسال النسبة المئوية للخصم
-        if (data.productDiscountPercentage) {
-          formDataToSend.append(
-            "productDiscountPercentage",
-            data.productDiscountPercentage
-          );
-        }
-
-        // إرسال قيمة الخصم
-        if (data.productDiscount) {
-          formDataToSend.append("productDiscount", data.productDiscount);
-        }
-
-        // إرسال تواريخ الخصم
-        if (discountDates) {
-          if (data.productDiscountStartDate) {
-            formDataToSend.append(
-              "productDiscountStartDate",
-              data.productDiscountStartDate
-            );
-          }
-          if (data.productDiscountEndDate) {
-            formDataToSend.append(
-              "productDiscountEndDate",
-              data.productDiscountEndDate
-            );
-          }
-        } else {
-          // إذا لم يتم تحديد تواريخ، نضع تواريخ افتراضية (من اليوم ولمدة شهر)
-          const today = new Date();
-          const nextMonth = new Date();
-          nextMonth.setMonth(today.getMonth() + 1);
-
-          formDataToSend.append(
-            "productDiscountStartDate",
-            today.toISOString()
-          );
-          formDataToSend.append(
-            "productDiscountEndDate",
-            nextMonth.toISOString()
-          );
-        }
+    
+    // إضافة بيانات الخصم إذا كان مفعلاً
+    if (hasDiscount) {
+      formDataToSend.append("oldProductPrice", data.oldProductPrice || "");
+      formDataToSend.append("productDiscount", data.productDiscount || "");
+      formDataToSend.append("productDiscountPercentage", data.productDiscountPercentage || "");
+      
+      if (data.productDiscountStartDate) {
+        formDataToSend.append("productDiscountStartDate", data.productDiscountStartDate);
+      }
+      
+      if (data.productDiscountEndDate) {
+        formDataToSend.append("productDiscountEndDate", data.productDiscountEndDate);
       }
     } else {
       // إذا لم يكن هناك خصم، نضع قيم افتراضية
-      formDataToSend.append("oldProductPrice", "0");
-      formDataToSend.append("productDiscount", "0");
-      formDataToSend.append("productDiscountPercentage", "0");
+      formDataToSend.append("oldProductPrice", "");
+      formDataToSend.append("productDiscount", "");
+      formDataToSend.append("productDiscountPercentage", "");
     }
 
     formDataToSend.append("productColors", JSON.stringify(data.productColors));
@@ -235,11 +195,18 @@ export function AddProducts({ t, locale }: { t: any; locale: string }) {
     formDataToSend.append("productQuantity", data.productQuantity);
     formDataToSend.append("productStatus", data.productStatus.toString());
     formDataToSend.append("NEW", data.NEW.toString());
-    formDataToSend.append("productImage", data.productImage);
+    
+    // إضافة الصورة الرئيسية
+    if (data.productImage) {
+      formDataToSend.append("productImage", data.productImage);
+    }
 
-    data.productImages.forEach((img: File) => {
-      formDataToSend.append("productImages", img);
-    });
+    // إضافة الصور الإضافية
+    if (data.productImages && data.productImages.length > 0) {
+      data.productImages.forEach((img: File) => {
+        formDataToSend.append("productImages", img);
+      });
+    }
 
     startTransition(async () => {
       try {
@@ -582,7 +549,7 @@ export function AddProducts({ t, locale }: { t: any; locale: string }) {
                               {(
                                 parseFloat(form.getValues("productPrice")) -
                                 parseFloat(
-                                  form.getValues("productDiscount") || "0"
+                                  form.getValues("productDiscount") || ""
                                 )
                               ).toFixed(2)}
                             </p>

@@ -49,7 +49,7 @@ export default function User({ t }: any) {
               {
                 <Image
                   src={
-                    user?.userImage ? `${apiURL}${user?.userImage}` : "/user.jpg"
+                    user?.userImage ? `${user?.userImage}` : "/user.jpg"
                   }
                   alt={user.firstName}
                   width={50}

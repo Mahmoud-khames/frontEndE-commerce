@@ -89,7 +89,7 @@ export default function Pagination({
               size="icon"
               className={`h-8 w-8 sm:h-9 sm:w-9 text-xs sm:text-sm ${
                 currentPage === page
-                  ? "bg-secondary hover:bg-secondary/90"
+                  ? "bg-primary text-red-500  hover:bg-primary/90"
                   : ""
               }`}
               onClick={() => typeof page === "number" && onPageChange(page)}

@@ -73,7 +73,7 @@ export default function EditProduct({
   const [colors, setColors] = useState<string[]>(product?.productColors || []);
   const [sizes, setSizes] = useState<string[]>(product?.productSizes || []);
   const [mainImagePreview, setMainImagePreview] = useState<string | null>(
-    product?.productImage ? `${apiURL}${product.productImage}` : null
+    product?.productImage ? `${product.productImage}` : null
   );
   const [existingImages, setExistingImages] = useState<string[]>(
     product?.productImages || []
@@ -99,6 +99,7 @@ export default function EditProduct({
       message: t.admin.invalidQuantity,
     }),
     productStatus: z.boolean().default(true),
+    NEW: z.boolean().default(false),
     productColors: z.any().optional(),
     productSizes: z.any().optional(),
     productImage: z.any().optional(),
@@ -126,6 +127,7 @@ export default function EditProduct({
       productCategory: product?.productCategory?._id || "",
       productQuantity: product?.productQuantity?.toString() || "",
       productStatus: product?.productStatus || true,
+      NEW: product?.NEW || false,
       productColors: product?.productColors || [],
       productSizes: product?.productSizes || [],
       productImages: [],
@@ -256,98 +258,61 @@ export default function EditProduct({
     setDeletedImages((prev) => [...prev, imageUrl]);
   };
 
-  // Form submission handler
+  // Submit form
   const onSubmit = (data: z.infer<typeof productSchema>) => {
     const formDataToSend = new FormData();
     
-    // إضافة البيانات النصية
-    formDataToSend.append('productName', data.productName);
-    formDataToSend.append('productDescription', data.productDescription);
-    formDataToSend.append('productPrice', data.productPrice);
+    // Append basic product data
+    formDataToSend.append("productName", data.productName);
+    formDataToSend.append("productDescription", data.productDescription);
+    formDataToSend.append("productPrice", data.productPrice);
+    formDataToSend.append("productCategory", data.productCategory);
+    formDataToSend.append("productQuantity", data.productQuantity);
+    formDataToSend.append("productStatus", data.productStatus.toString());
     
-    if (data.hasDiscount) {
-      if (discountType === "fixed" && data.oldProductPrice) {
-        formDataToSend.append('oldProductPrice', data.oldProductPrice);
-        // حساب قيمة الخصم الثابت
-        if (parseFloat(data.productPrice) > parseFloat(data.oldProductPrice)) {
-          const fixedDiscount = parseFloat(data.productPrice) - parseFloat(data.oldProductPrice);
-          formDataToSend.append('productDiscount', fixedDiscount.toString());
-        }
-      } else if (discountType === "percentage") {
-        // إرسال النسبة المئوية للخصم
-        if (data.productDiscountPercentage) {
-          formDataToSend.append('productDiscountPercentage', data.productDiscountPercentage);
-        }
-        
-        // إرسال قيمة الخصم
-        if (data.productDiscount) {
-          formDataToSend.append('productDiscount', data.productDiscount);
-        }
-        
-        // إرسال تواريخ الخصم
-        if (discountDates) {
-          if (data.productDiscountStartDate) {
-            formDataToSend.append('productDiscountStartDate', data.productDiscountStartDate);
-          }
-          if (data.productDiscountEndDate) {
-            formDataToSend.append('productDiscountEndDate', data.productDiscountEndDate);
-          }
-        } else {
-          // إذا لم يتم تحديد تواريخ، نضع تواريخ افتراضية (من اليوم ولمدة شهر)
-          const today = new Date();
-          const nextMonth = new Date();
-          nextMonth.setMonth(today.getMonth() + 1);
-          
-          formDataToSend.append('productDiscountStartDate', today.toISOString());
-          formDataToSend.append('productDiscountEndDate', nextMonth.toISOString());
-        }
+    // تحقق من وجود خاصية NEW قبل استخدامها
+    if (data.NEW !== undefined) {
+      formDataToSend.append("NEW", data.NEW.toString());
+    } else {
+      // إذا كانت غير موجودة، استخدم قيمة افتراضية
+      formDataToSend.append("NEW", "false");
+    }
+    
+    // Append arrays as JSON strings
+    formDataToSend.append("productColors", JSON.stringify(colors));
+    formDataToSend.append("productSizes", JSON.stringify(sizes));
+    
+    // Append discount data if applicable
+    if (hasDiscount) {
+      formDataToSend.append("oldProductPrice", data.oldProductPrice || "0");
+      formDataToSend.append("productDiscount", data.productDiscount || "0");
+      formDataToSend.append("productDiscountPercentage", data.productDiscountPercentage || "0");
+      
+      if (data.productDiscountStartDate) {
+        formDataToSend.append("productDiscountStartDate", data.productDiscountStartDate);
+      }
+      
+      if (data.productDiscountEndDate) {
+        formDataToSend.append("productDiscountEndDate", data.productDiscountEndDate);
       }
     } else {
-      // إذا لم يكن هناك خصم، نضع قيم افتراضية
-      formDataToSend.append('oldProductPrice', '');
-      formDataToSend.append('productDiscount', '0');
-      formDataToSend.append('productDiscountPercentage', '0');
-      formDataToSend.append('productDiscountStartDate', '');
-      formDataToSend.append('productDiscountEndDate', '');
+      formDataToSend.append("oldProductPrice", "0");
+      formDataToSend.append("productDiscount", "0");
+      formDataToSend.append("productDiscountPercentage", "0");
     }
     
-    // معالجة الألوان والمقاسات بشكل صحيح
-    // تأكد من أن الألوان والمقاسات هي مصفوفات بسيطة من السلاسل النصية
-    const processArray = (arr: any[]): string[] => {
-      return arr.map(item => {
-        if (typeof item === 'string') {
-          // إزالة أي تنسيق JSON إضافي
-          try {
-            const parsed = JSON.parse(item);
-            return typeof parsed === 'string' ? parsed : item;
-          } catch (e) {
-            return item;
-          }
-        }
-        return String(item);
-      });
-    };
+    // Append deleted images
+    if (deletedImages.length > 0) {
+      formDataToSend.append("deletedImages", JSON.stringify(deletedImages));
+    }
     
-    const processedColors = processArray(colors);
-    const processedSizes = processArray(sizes);
-    
-    // إرسال المصفوفات كـ JSON
-    formDataToSend.append('productColors', JSON.stringify(processedColors));
-    formDataToSend.append('productSizes', JSON.stringify(processedSizes));
-    
-    formDataToSend.append('productCategory', data.productCategory);
-    formDataToSend.append('productQuantity', data.productQuantity);
-    formDataToSend.append('productStatus', data.productStatus.toString());
-    
-    // إضافة الصور المحذوفة
-    formDataToSend.append('deletedImages', JSON.stringify(deletedImages));
-    
-    // إضافة الصور الجديدة
+    // Append main image if changed
     if (data.productImage instanceof File) {
-      formDataToSend.append('productImage', data.productImage);
+      formDataToSend.append("productImage", data.productImage);
     }
     
-    if (data.productImages.length > 0) {
+    // Append additional images if any
+    if (data.productImages && data.productImages.length > 0) {
       data.productImages.forEach((file: File) => {
         formDataToSend.append('productImages', file);
       });
@@ -769,7 +734,7 @@ export default function EditProduct({
                     {existingImages.map((img, index) => (
                       <div key={`existing-${index}`} className="relative">
                         <Image
-                          src={`${apiURL}${img}`}
+                          src={`${img}`}
                           alt={product.productName}
                           width={100}
                           height={100}
@@ -803,6 +768,23 @@ export default function EditProduct({
                     />
                   </FormControl>
                   <FormLabel>{t.admin.productStatus}</FormLabel>
+                </FormItem>
+              )}
+            />
+            
+            {/* NEW Product */}
+            <FormField
+              control={form.control}
+              name="NEW"
+              render={({ field }) => (
+                <FormItem className="flex items-center space-x-2 rtl:space-x-reverse">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormLabel>{t.admin.newProduct}</FormLabel>
                 </FormItem>
               )}
             />

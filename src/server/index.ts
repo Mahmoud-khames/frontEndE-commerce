@@ -18,18 +18,30 @@ export const register = (data: {
 
 // Product endpoints
 export const getProducts = () => api.get("/api/product");
-export const createProduct = (data: FormData) =>
-  api.post("/api/product", data, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
-export const updateProduct = (data: FormData, productSlug: string) =>
-  api.put(`/api/product/${productSlug}`, data, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
+export const createProduct = async (data: FormData) => {
+  try {
+    const response = await api.post("/api/product", data, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};
+export const updateProduct = async (data: FormData, productSlug: string) => {
+  try {
+    const response = await api.put(`/api/product/${productSlug}`, data, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};
 export const getProduct = (slug: string) => api.get(`/api/product/${slug}`);
 export const deleteProduct = (slug: string) =>
   api.delete(`/api/product/${slug}`);
@@ -39,18 +51,30 @@ export const searchProducts = (query: string) =>
 // Category endpoints
 export const getCategories = () => api.get("/api/category");
 export const getCategoryById = (id: string) => api.get(`/api/category/${id}`);
-export const createCategory = (data: FormData) =>
-  api.post("/api/category", data, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
-export const updateCategory = (data: FormData, categoryId: string) =>
-  api.put(`/api/category/${categoryId}`, data, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
+export const createCategory = async (data: FormData) => {
+  try {
+    const response = await api.post("/api/category", data, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};
+export const updateCategory = async (data: FormData, categoryId: string) => {
+  try {
+    const response = await api.put(`/api/category/${categoryId}`, data, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};
 export const deleteCategory = (categoryId: string) =>
   api.delete(`/api/category/${categoryId}`);
 
@@ -116,36 +140,60 @@ export const clearWishlist = () => api.delete("/api/wishlist/clear");
 
 // User endpoints
 export const getUsers = () => api.get("/api/user");
-export const updateUser = (data: FormData) =>
-  api.put(`/api/user/${data.get("uId")}`, data, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
-export const registerUser = (data: FormData) =>
-  api.post("/api/user", data, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
+export const updateUser = async (data: FormData) => {
+  try {
+    const response = await api.put(`/api/user/${data.get("uId")}`, data, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};
+export const registerUser = async (data: FormData) => {
+  try {
+    const response = await api.post("/api/user", data, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};
 export const deleteUser = (uId: string) => api.delete(`/api/user/${uId}`);
 
 // Customize endpoints
 export const getCustomizeImages = () => api.get("/api/customize");
-export const uploadSlideImage = (data: FormData) =>
-  api.post("/api/customize/uploadSlideImage", data, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
+export const uploadSlideImage = async (data: FormData) => {
+  try {
+    const response = await api.post("/api/customize/uploadSlideImage", data, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};
 export const deleteSlideImage = (data: { id: string; imageIndex: number }) =>
   api.delete("/api/customize/deleteSlideImage", { data });
-export const updateCustomize = (data: FormData, id: string) =>
-  api.put(`/api/customize/${id}`, data, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
+export const updateCustomize = async (data: FormData, id: string) => {
+  try {
+    const response = await api.put(`/api/customize/${id}`, data, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};
 
 // Dashboard stats endpoints
 export const getProductsCount = () => api.get("/api/product/dashboard/count");

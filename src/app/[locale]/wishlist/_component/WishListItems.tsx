@@ -5,7 +5,7 @@ import React from "react";
 import { useAppSelector } from "@/redux/hooks";
 import { selectWishlistItems, selectWishlistLoading } from "@/redux/features/wishList/wishlistSlice";
 import ProductCard from "@/components/ProductCard";
-import Link from "next/link";
+import Link from "@/components/link";
 
 export default function WishListItems({ translations, locale }: { translations: any; locale: string }) {
   const wishlist = useAppSelector(selectWishlistItems);

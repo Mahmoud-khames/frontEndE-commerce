@@ -87,6 +87,26 @@ export default function ProductItem({ slug }: { slug: string }) {
   
   const apiURL = process.env.NEXT_PUBLIC_API_URL;
 
+  // إضافة وظيفة للتعامل مع عناوين URL للصور
+  const getImageUrl = (imagePath: string) => {
+    if (!imagePath) {
+      return '/placeholder-product.jpg';
+    }
+    
+    // تحقق مما إذا كانت الصورة من Cloudinary
+    if (imagePath.includes('cloudinary.com')) {
+      return imagePath; // استخدم عنوان URL كاملاً إذا كان من Cloudinary
+    }
+    
+    // تأكد من أن apiURL موجود وأنه ينتهي بـ "/"
+    const baseUrl = apiURL ? (apiURL.endsWith('/') ? apiURL : `${apiURL}/`) : '/';
+    
+    // تأكد من أن مسار الصورة لا يبدأ بـ "/"
+    const path = imagePath.startsWith('/') ? imagePath.substring(1) : imagePath;
+      
+    return `${baseUrl}${path}`;
+  };
+
   return (
     <>
       {/* Breadcrumbs */}
@@ -116,7 +136,7 @@ export default function ProductItem({ slug }: { slug: string }) {
           <div className="w-full md:w-1/2">
             <div className="relative aspect-square mb-2 sm:mb-4 border rounded-md overflow-hidden">
               <Image
-                src={`${apiURL}${selectedImage || product.productImages[0]}`}
+                src={getImageUrl(selectedImage || product.productImages[0])}
                 alt={product.productName}
                 fill
                 className="
@@ -140,7 +160,7 @@ export default function ProductItem({ slug }: { slug: string }) {
                 >
                   <div className="relative w-full h-full">
                     <Image
-                      src={`${apiURL}${image}`}
+                      src={getImageUrl(image)}
                       alt={`${product.productName} thumbnail ${index + 1}`}
                       fill
                       className="object-cover"

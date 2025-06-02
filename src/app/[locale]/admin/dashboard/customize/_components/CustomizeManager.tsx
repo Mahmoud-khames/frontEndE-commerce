@@ -156,7 +156,7 @@ export function CustomizeManager({ t, locale }: { t: any; locale: string }) {
     }
   };
 
-  // تحديث معلومات التخصيص
+  // تحديث بيانات التخصيص
   const handleUpdateCustomize = async () => {
     if (!customize || !customize._id) return;
 
@@ -165,11 +165,10 @@ export function CustomizeManager({ t, locale }: { t: any; locale: string }) {
       const formData = new FormData();
       formData.append("title", title);
       formData.append("description", description);
-      formData.append("isActive", isActive.toString());
       formData.append("firstShow", firstShow.toString());
+      formData.append("isActive", isActive.toString());
 
       const response = await updateCustomize(formData, customize._id);
-
       if (response.data.success) {
         toast.success(
           response.data.message ||
@@ -263,7 +262,7 @@ export function CustomizeManager({ t, locale }: { t: any; locale: string }) {
                     className="relative border rounded-md overflow-hidden h-48"
                   >
                     <Image
-                      src={`${apiURL}${image}`}
+                      src={`${image}`}
                       alt={`Slide ${index + 1}`}
                       fill
                       className="object-cover"
@@ -354,3 +353,5 @@ export function CustomizeManager({ t, locale }: { t: any; locale: string }) {
     </div>
   );
 }
+
+

@@ -10,9 +10,9 @@ export default async function Page() {
     <div className="flex items-center justify-between py-10 min-h-screen gap-10">
       <div className="flex flex-col lg:flex-row justify-between items-center gap-10 w-full max-w-7xl mx-auto">
         {/* Image Section */}
-        <div className="w-full lg:w-2/3">
+        <div className="w-full lg:w-2/3 hidden md:block">
           <Image
-            src="/signup.png"
+            src="/imagesing.png"
             alt="Cart with phone and shopping bags"
             width={805}
             height={781}

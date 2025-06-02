@@ -344,7 +344,7 @@ export default function ProductList({ t, locale }: { t: any; locale: string }) {
           {pagination && pagination.totalPages > 1 && (
             <div className="mt-6 sm:mt-8 flex justify-center">
               <Pagination
-                currentPage={pagination.currentPage}
+                currentPage={pagination.page}
                 totalPages={pagination.totalPages}
                 onPageChange={handlePageChange}
               />

@@ -105,8 +105,8 @@ export default function ProfileForm({ t }: { t: TranslationType }) {
   useEffect(() => {
     if (user?.userImage) {
       setPreviewImage(
-        user.userImage.startsWith('/')
-          ? `${apiURL}${user.userImage}`
+          user.userImage 
+          ? `${user.userImage}`
           : '/user.jpg'
       );
     } else {

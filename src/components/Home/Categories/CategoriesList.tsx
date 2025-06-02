@@ -57,7 +57,7 @@ export default function CategoriesList() {
               {category.image && (
                 <div className="flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8 md:w-12 md:h-12 lg:w-14 lg:h-14">
                   <Image 
-                    src={`${apiURL}${category.image}`}
+                    src={`${category.image}`}
                     alt={category.name}
                     width={isMobile ? 24 : 56}
                     height={isMobile ? 24 : 56}

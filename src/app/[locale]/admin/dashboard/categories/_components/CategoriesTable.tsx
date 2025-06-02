@@ -88,7 +88,7 @@ export default function CategoriesTable({
                     <div className="w-16 h-16 relative rounded overflow-hidden">
                       {category.image ? (
                         <Image
-                          src={`${process.env.NEXT_PUBLIC_API_URL}${category.image}`}
+                          src={`${category.image}`}
                           alt={category.name}
                           fill
                           className="object-cover"

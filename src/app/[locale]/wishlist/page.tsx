@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/link";
 import WishListItems from "./_component/WishListItems";
 import { getCurrentLocale } from "@/lib/getCurrentLocale";
 import Trans from "@/components/trans";

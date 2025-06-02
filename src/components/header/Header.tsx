@@ -64,7 +64,7 @@ export default function Header({ t }: any) {
                 href={`/${locale}/${item.url}`}
                 className={cn(
                   "text-Text-foreground text-lg p-2 hover:border-b-2 ",
-                  pathname === `/${locale}/${item.url}`
+                  pathname === `/${locale}/${item.url}/`
                     ? "border-b-2 border-black"
                     : ""
                 )}

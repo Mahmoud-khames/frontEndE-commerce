@@ -4,7 +4,7 @@ import { getCurrentLocale } from "@/lib/getCurrentLocale";
 import getTrans from "@/lib/translation";
 import { LanguageType } from "@/i18n.config";
 import ProfileForm from "@/components/account/ProfileForm";
-import Link from "next/link";
+import Link from "@/components/link";
 import { Metadata } from "next";
 import { getDictionary } from "@/lib/dictionary";
 import { Locale } from "@/i18n.config";

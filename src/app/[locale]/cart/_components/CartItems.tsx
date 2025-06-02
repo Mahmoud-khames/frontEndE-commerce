@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import Link from "next/link";
+import Link from "@/components/link";
 import { deliveryFee, getSubTotal, getTotalWithDelivery, getTotalWithDiscount } from "@/lib/cart";
 import { formatCurrency } from "@/lib/formatters";
 import {
@@ -193,7 +193,7 @@ function CartItems({
                         <div className="relative w-16 h-16">
                           {item.product?.productImage && (
                             <Image
-                              src={`${apiURL}${item.product.productImage}`}
+                              src={`${item.product.productImage}`}
                               alt={item.product?.productName || "Product"}
                               fill
                               className="object-contain"

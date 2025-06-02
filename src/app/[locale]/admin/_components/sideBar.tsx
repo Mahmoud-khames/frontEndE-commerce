@@ -12,7 +12,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { AdminDashboard } from "@/data/data";
-import Link from "next/link";
+import Link from "@/components/link";
 import { Routes } from "@/constants/enums";
 
 export function AppSidebar({ t, locale }: { t: any; locale: any }) {
@@ -31,8 +31,8 @@ export function AppSidebar({ t, locale }: { t: any; locale: any }) {
               {AdminDashboard.map((item) => {
                 // Check if current path matches exactly the dashboard route or is the root admin dashboard
                 const isActive = 
-                  pathname === `/${locale}/${item.url}` || 
-                  (item.url === Routes.ADMIN_DASHBOARD && pathname === `/${locale}/admin/dashboard`);
+                  pathname === `/${locale}/${item.url}/` || 
+                  (item.url === Routes.ADMIN_DASHBOARD && pathname === `/${locale}/admin/dashboard/`);
                 
                 return (
                   <SidebarMenuItem key={item.id}>

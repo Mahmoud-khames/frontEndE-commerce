@@ -59,12 +59,13 @@ export default function EditProduct({
   const apiURL = process.env.NEXT_PUBLIC_API_URL;
   
   const [hasDiscount, setHasDiscount] = useState(
-    product?.oldProductPrice && product.oldProductPrice > 0 || 
-    product?.productDiscount && product.productDiscount > 0
+    !!(product?.oldProductPrice > 0 || product?.productDiscount > 0)
   );
+  
   const [discountType, setDiscountType] = useState<"fixed" | "percentage">(
-    product?.productDiscountPercentage && product.productDiscountPercentage > 0 ? "percentage" : "fixed"
+    product?.productDiscountPercentage > 0 ? "percentage" : "fixed"
   );
+  
   const [discountDates, setDiscountDates] = useState(
     !!(product?.productDiscountStartDate && product?.productDiscountEndDate)
   );
@@ -136,8 +137,11 @@ export default function EditProduct({
   });
 
   useEffect(() => {
-    dispatch(fetchCategories());
-  }, [dispatch]);
+    if (categories.length === 0) {
+      dispatch(fetchCategories());
+    }
+  }, [dispatch, categories.length]);
+  
 
   useEffect(() => {
     // وظيفة لتطبيع المصفوفات

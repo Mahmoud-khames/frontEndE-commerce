@@ -52,7 +52,7 @@ export default function Header({ t }: any) {
     >
       <nav className="max-w-7xl mx-auto px-4 md:px-6 flex items-center justify-between py-3 md:py-5">
         {/* Logo */}
-        <Link href={`/${locale}`} className="flex-shrink-0">
+        <Link href={`/${locale}/`} className="flex-shrink-0">
           <h1 className="text-Text-foreground font-bold text-xl md:text-2xl">{t.logo}</h1>
         </Link>
 

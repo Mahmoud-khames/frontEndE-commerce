@@ -79,8 +79,8 @@ export default function UsersTable({
                   <TableCell className="p-2">
                     <div className="relative w-10 h-10 rounded-full overflow-hidden">
                       <Image
-                        src={user.userImage?.startsWith('/') 
-                          ? `${process.env.NEXT_PUBLIC_API_URL}${user.userImage}` 
+                        src={user.userImage
+                          ? `${user.userImage}` 
                           : '/user.jpg'}
                         alt={user.firstName}
                         fill

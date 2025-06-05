@@ -5,13 +5,15 @@ import { getCurrentLocale } from "@/lib/getCurrentLocale";
 import { Metadata } from "next";
 import { getDictionary } from "@/lib/dictionary";
 import AuthCheck from "./_components/AuthCheck";
+import { Locale } from "@/i18n.config";
 
+export async function generateMetadata({
+  params,
+}: {
+  params: { locale: Locale };
+}): Promise<Metadata> {
+  const dictionary = await getDictionary(params.locale);
 
-
-export async function generateMetadata(): Promise<Metadata> {
-  const locale = await getCurrentLocale();
-  const dictionary = await getDictionary(locale);
-  
   return {
     title: dictionary.metadata.cart.title,
     description: dictionary.metadata.cart.description,
@@ -19,13 +21,13 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function CartPage() {
-  const t = await Trans()
-  const {navigation,cart,common} = t
-  const locale = await getCurrentLocale()
+  const t = await Trans();
+  const { navigation, cart, common } = t;
+  const locale = await getCurrentLocale();
   return (
-    <div >
+    <div>
       <div className="flex justify-start items-start py-10 text-gray-600 gap-4">
-          <Link href={`/${locale}`} className="text-gray-600">
+        <Link href={`/${locale}`} className="text-gray-600">
           {navigation.home}
         </Link>
         /

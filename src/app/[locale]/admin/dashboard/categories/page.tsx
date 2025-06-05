@@ -1,9 +1,14 @@
 import CategoriesTable from "./_components/CategoriesTable";
 import getTrans from "@/lib/translation";
-import { getCurrentLocale } from "@/lib/getCurrentLocale";
 
-export default async function CategoriesPage() {
-  const locale = await getCurrentLocale();
+import { Locale } from "@/i18n.config";
+
+export default async function CategoriesPage({
+  params,
+}: {
+  params: { locale: Locale };
+}) {
+  const locale = params.locale;
   const { t } = await getTrans(locale);
 
   return (

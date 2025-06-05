@@ -2,12 +2,15 @@ import Image from "next/image";
 import Form from "./_components/Form";
 import Link from "@/components/link";
 import { Routes } from "@/constants/enums";
-import { getCurrentLocale } from "@/lib/getCurrentLocale";
 import getTrans from "@/lib/translation";
+import { Locale } from "@/i18n.config";
 
-export default async function Page() {
-  const locale = await getCurrentLocale();
-
+export default async function Page({
+  params,
+}: {
+  params: { locale: Locale };
+}) {
+  const locale = params.locale;
   const { t } = await getTrans(locale);
   return (
     <div className="flex flex-col ">

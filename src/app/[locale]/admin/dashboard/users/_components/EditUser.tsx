@@ -20,8 +20,21 @@ import { fetchUsers } from "@/redux/features/user/userSlice";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { updateUser } from "@/server";
 import { Pencil, Loader2 } from "lucide-react";
 import Image from "next/image";
@@ -41,12 +54,23 @@ export default function EditUser({
   const dispatch = useAppDispatch();
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const apiURL = process.env.NEXT_PUBLIC_API_URL;
+  // 🟡 1. أضف حالة تتبع تحميل الصورة
+  const [isImageLoading, setIsImageLoading] = useState(false);
 
   // Define form schema with Zod
   const userSchema = z.object({
-    firstName: z.string().min(2, { message: t.admin.minFirstNameLength || "First name must be at least 2 characters" }),
-    lastName: z.string().min(2, { message: t.admin.minLastNameLength || "Last name must be at least 2 characters" }),
-    email: z.string().email({ message: t.admin.invalidEmail || "Invalid email address" }),
+    firstName: z.string().min(2, {
+      message:
+        t.admin.minFirstNameLength ||
+        "First name must be at least 2 characters",
+    }),
+    lastName: z.string().min(2, {
+      message:
+        t.admin.minLastNameLength || "Last name must be at least 2 characters",
+    }),
+    email: z
+      .string()
+      .email({ message: t.admin.invalidEmail || "Invalid email address" }),
     phone: z.string().optional(),
     role: z.string().default("user"),
     userImage: z.any().optional(),
@@ -69,26 +93,22 @@ export default function EditUser({
   // Set preview image when dialog opens
   useEffect(() => {
     if (user.userImage) {
-      setPreviewImage(
-        user.userImage.startsWith('/')
-          ? `${user.userImage}`
-          : '/user.jpg'
-      );
+      setPreviewImage(user.userImage ? `${user.userImage}` : "/user.jpg");
     }
   }, [user, apiURL, open]);
 
   // Handle image change
+  // 🟡 2. عند تغيير الصورة نبدأ التحميل
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       form.setValue("userImage", file);
       setPreviewImage(URL.createObjectURL(file));
+      setIsImageLoading(true); // ابدأ التحميل
     }
   };
 
   const onSubmit = async (data: z.infer<typeof userSchema>) => {
-    setIsPending(true);
-    
     try {
       const formDataToSend = new FormData();
       formDataToSend.append("firstName", data.firstName);
@@ -96,33 +116,35 @@ export default function EditUser({
       formDataToSend.append("email", data.email);
       formDataToSend.append("phone", data.phone || "");
       formDataToSend.append("role", data.role);
-      
+
       // Only append password if it's not empty
       if (data.password && data.password.trim() !== "") {
         formDataToSend.append("password", data.password);
       }
-      
+
       // Add user image if provided
       if (data.userImage instanceof File) {
-        formDataToSend.append('userImage', data.userImage);
+        formDataToSend.append("userImage", data.userImage);
       }
-      
-      startTransition(async () => {
-        try {
-          const response = await updateUser(formDataToSend, user._id);
-          toast.success(response.data.message || t.admin.userUpdatedSuccessfully || "User updated successfully");
-          dispatch(fetchUsers());
-          setOpen(false);
-          router.refresh();
-        } catch (error: any) {
-          toast.error(error.message || t.common.error || "An error occurred");
-        } finally {
-          setIsPending(false);
-        }
+
+      startTransition(() => {
+        updateUser(formDataToSend, user._id)
+          .then((response) => {
+            toast.success(
+              response.data.message ||
+                t.admin.userUpdatedSuccessfully ||
+                "User updated successfully"
+            );
+            dispatch(fetchUsers());
+            setOpen(false);
+            router.refresh();
+          })
+          .catch((error) => {
+            toast.error(error.message || t.common.error || "An error occurred");
+          });
       });
     } catch (error: any) {
       toast.error(error.message || t.common.error || "An error occurred");
-      setIsPending(false);
     }
   };
 
@@ -151,7 +173,12 @@ export default function EditUser({
                   <FormItem>
                     <FormLabel>{t.admin.firstName || "First Name"}</FormLabel>
                     <FormControl>
-                      <Input placeholder={t.admin.enterFirstName || "Enter first name"} {...field} />
+                      <Input
+                        placeholder={
+                          t.admin.enterFirstName || "Enter first name"
+                        }
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -164,14 +191,17 @@ export default function EditUser({
                   <FormItem>
                     <FormLabel>{t.admin.lastName || "Last Name"}</FormLabel>
                     <FormControl>
-                      <Input placeholder={t.admin.enterLastName || "Enter last name"} {...field} />
+                      <Input
+                        placeholder={t.admin.enterLastName || "Enter last name"}
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
-            
+
             <FormField
               control={form.control}
               name="email"
@@ -179,13 +209,17 @@ export default function EditUser({
                 <FormItem>
                   <FormLabel>{t.admin.email || "Email"}</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder={t.admin.enterEmail || "Enter email"} {...field} />
+                    <Input
+                      type="email"
+                      placeholder={t.admin.enterEmail || "Enter email"}
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="phone"
@@ -193,49 +227,73 @@ export default function EditUser({
                 <FormItem>
                   <FormLabel>{t.admin.phone || "Phone"}</FormLabel>
                   <FormControl>
-                    <Input type="text" placeholder={t.admin.enterPhone || "Enter phone number"} {...field} />
+                    <Input
+                      type="text"
+                      placeholder={t.admin.enterPhone || "Enter phone number"}
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="role"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t.admin.role || "Role"}</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder={t.admin.selectRole || "Select role"} />
+                        <SelectValue
+                          placeholder={t.admin.selectRole || "Select role"}
+                        />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="user">{t.admin.user || "User"}</SelectItem>
-                      <SelectItem value="admin">{t.admin.admin || "Admin"}</SelectItem>
+                      <SelectItem value="user">
+                        {t.admin.user || "User"}
+                      </SelectItem>
+                      <SelectItem value="admin">
+                        {t.admin.admin || "Admin"}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t.admin.newPassword || "New Password"} ({t.admin.leaveBlankToKeepCurrent || "Leave blank to keep current"})</FormLabel>
+                  <FormLabel>
+                    {t.admin.newPassword || "New Password"} (
+                    {t.admin.leaveBlankToKeepCurrent ||
+                      "Leave blank to keep current"}
+                    )
+                  </FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder={t.admin.enterNewPassword || "Enter new password"} {...field} />
+                    <Input
+                      type="password"
+                      placeholder={
+                        t.admin.enterNewPassword || "Enter new password"
+                      }
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <div className="space-y-2">
               <Label>{t.admin.userImage || "User Image"}</Label>
               <Input
@@ -251,18 +309,28 @@ export default function EditUser({
                       alt={t.admin.userImagePreview || "User image preview"}
                       fill
                       className="object-cover"
+                      onLoad={() => setIsImageLoading(false)} // عند نجاح تحميل الصورة
+                      onError={() => setIsImageLoading(false)} // عند فشل تحميل الصورة
                     />
                   </div>
                 </div>
               )}
             </div>
-            
+
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+              >
                 {t.common.cancel || "Cancel"}
               </Button>
-              <Button type="submit" disabled={isPending} className="bg-secondary hover:bg-secondary/90">
-                {isPending ? (
+              <Button
+                type="submit"
+                disabled={isPending || isImageLoading}
+                className="bg-secondary hover:bg-secondary/90"
+              >
+                {isPending || isImageLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     {t.common.loading || "Loading..."}
@@ -278,6 +346,3 @@ export default function EditUser({
     </Dialog>
   );
 }
-
-
-

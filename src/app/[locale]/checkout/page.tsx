@@ -8,10 +8,15 @@ import { getDictionary } from "@/lib/dictionary";
 import { Metadata } from "next";
 import { getCurrentLocale } from "@/lib/getCurrentLocale";
 import getTrans from "@/lib/translation";
+import { Locale } from "@/i18n.config";
 
-export async function generateMetadata(): Promise<Metadata> {
-  const locale = await getCurrentLocale();
-  const dictionary = await getDictionary(locale);
+export async function generateMetadata({
+  params,
+}: {
+  params: { locale: Locale };
+}): Promise<Metadata> {
+  
+  const dictionary = await getDictionary(params.locale);
   
   
   return {
@@ -21,9 +26,13 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 
-export default async function CheckoutPage() {
-  const locale = await getCurrentLocale();
-  const { t } = await getTrans(locale); 
+export default async function CheckoutPage({
+  params,
+}: {
+  params: { locale: Locale };
+}) {
+  const locale = params.locale;
+  const { t } = await getTrans(locale);
   
   return (
     <div className="container mx-auto px-4 py-8">

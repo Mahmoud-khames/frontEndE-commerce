@@ -1,11 +1,15 @@
 import Image from "next/image";
 import Form from "./_components/Form";
-import { getCurrentLocale } from "@/lib/getCurrentLocale";
 import getTrans from "@/lib/translation";
+import { Locale } from "@/i18n.config";
 
 
-export default async function Page() {    
-  const locale = await getCurrentLocale();
+export default async function Page({
+  params,
+}: {
+  params: { locale: Locale };
+}) {
+  const locale = params.locale;
   const { t } = await getTrans(locale);
   return (
     <div className="flex items-center justify-between py-10 min-h-screen gap-10">

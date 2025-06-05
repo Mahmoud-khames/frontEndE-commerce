@@ -7,13 +7,17 @@ import React from "react";
 import { Facebook, Twitter, Linkedin, ShoppingBag, DollarSign, Briefcase, HandCoins } from "lucide-react"; // أيقونات السوشيال ميديا
 import Link from "@/components/link";
 import getTrans from "@/lib/translation";
-import { getCurrentLocale } from "@/lib/getCurrentLocale";
-import { LanguageType } from "@/i18n.config";
+import { Locale } from "@/i18n.config";
 
 
-export async function generateMetadata(): Promise<Metadata> {
-  const locale = await getCurrentLocale();
-  const dictionary = await getDictionary(locale);
+
+export async function generateMetadata({
+  params,
+}: {
+  params: { locale: Locale };
+}): Promise<Metadata> {
+  
+  const dictionary = await getDictionary(params.locale);
   
   return {
     title: dictionary.metadata.about.title,
@@ -21,9 +25,13 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default async function About() {
-  const locale = await getCurrentLocale();
-  const { t } = await getTrans(locale as LanguageType);
+export default async function About({
+  params,
+}: {
+  params: { locale: Locale };
+}) {
+  const { locale } = params; // ✅ إصلاح المشكلة هنا
+  const { t } = await getTrans(locale);
   return (
     <div className="">
       {/* Breadcrumbs */}

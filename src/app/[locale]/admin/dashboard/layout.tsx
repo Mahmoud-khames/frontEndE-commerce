@@ -2,14 +2,19 @@ import Trans from "@/components/trans";
 import { AppSidebar } from "../_components/sideBar";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { getCurrentLocale } from "@/lib/getCurrentLocale";
+import { Locale } from "@/i18n.config";
+import getTrans from "@/lib/translation";
 
 export default async function Layout({
   children,
+  params,
 }: {
   children: React.ReactNode;
+  params: { locale: Locale };
 }) {
-  const t = await Trans();
-  const locale = await getCurrentLocale();
+  const locale = params.locale;
+  const {t }= await getTrans(locale);
+
 
   return (
     <SidebarProvider>

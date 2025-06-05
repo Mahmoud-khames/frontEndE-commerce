@@ -10,10 +10,15 @@ import { Suspense } from "react";
 import Loading from "../loading";
 import { Metadata } from "next";
 import getTrans from "@/lib/translation";
-import { getCurrentLocale } from "@/lib/getCurrentLocale";
-export async function generateMetadata(): Promise<Metadata> {
-  const locale = await getCurrentLocale();
-  const dictionary = await getDictionary(locale);
+
+import { Locale } from "@/i18n.config";
+export async function generateMetadata({
+  params,
+}: {
+  params: { locale: Locale };
+}): Promise<Metadata> {
+  
+  const dictionary = await getDictionary(params.locale);
   
   
   return {
@@ -25,8 +30,12 @@ export async function generateMetadata(): Promise<Metadata> {
 
 // ... (existing imports)
 
-export default async function ProductsPage() {
-  const locale = await getCurrentLocale();
+export default async function ProductsPage({
+  params,
+}: {
+  params: { locale: Locale };
+}) {
+  const locale = params.locale;
   const { t } = await getTrans(locale);
 
   return (

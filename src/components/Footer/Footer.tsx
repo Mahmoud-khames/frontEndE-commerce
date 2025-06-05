@@ -1,13 +1,16 @@
 import React from "react";
-import { Facebook, Twitter, Instagram, Linkedin } from "lucide-react"; 
+import { Facebook, Twitter, Instagram, Linkedin } from "lucide-react";
 import Link from "@/components/link";
-import { getCurrentLocale } from "@/lib/getCurrentLocale";
 import getTrans from "@/lib/translation";
-import { LanguageType } from "@/i18n.config";
+import { Locale } from "@/i18n.config";
 
-export default async function Footer() {
-  const locale = await getCurrentLocale();  
-  const { t } = await getTrans(locale as LanguageType);
+export default async function Footer({
+  params,
+}: {
+  params: { locale: Locale };
+}) {
+  const locale = params.locale;
+  const { t } = await getTrans(locale);
   return (
     <footer className="bg-black text-white py-10 relative bottom-0">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -41,14 +44,8 @@ export default async function Footer() {
 
           <div>
             <h3 className="text-lg font-semibold mb-4">{t.general.support}</h3>
-            <p className="mb-2">
-              {t.general.address}
-            </p>
-            <p
-              className="mb-2 !text-wrap"
-            >
-              {t.general.email}
-            </p>
+            <p className="mb-2">{t.general.address}</p>
+            <p className="mb-2 !text-wrap">{t.general.email}</p>
             <p>{t.general.phone}</p>
           </div>
 
@@ -84,7 +81,9 @@ export default async function Footer() {
           </div>
 
           <div>
-            <h3 className="text-lg font-semibold mb-4">{t.general.quickLink}</h3>
+            <h3 className="text-lg font-semibold mb-4">
+              {t.general.quickLink}
+            </h3>
             <ul className="space-y-2">
               <li>
                 <a href="#" className="hover:underline">
@@ -110,7 +109,9 @@ export default async function Footer() {
           </div>
 
           <div>
-            <h3 className="text-lg font-semibold mb-4">{t.general.downloadApp}</h3>
+            <h3 className="text-lg font-semibold mb-4">
+              {t.general.downloadApp}
+            </h3>
             <p className="mb-2">{t.general.saveWithApp}</p>
             <div className="flex space-x-2 mb-4">
               <div className="w-20 h-20 bg-gray-300 flex items-center justify-center">

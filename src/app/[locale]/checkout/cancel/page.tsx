@@ -1,10 +1,14 @@
+import { Locale } from '@/i18n.config';
 import CancelContent from './_components/CancelContent';
-import { getCurrentLocale } from '@/lib/getCurrentLocale';
 import getTrans from '@/lib/translation';
 
-export default async function CheckoutCancelPage() {
-  const locale = await getCurrentLocale();
-  const {t} = await getTrans(locale);
+export default async function CheckoutCancelPage({
+  params,
+}: {
+  params: { locale: Locale };
+}) {
+  const locale = params.locale;
+  const { t } = await getTrans(locale);
   
   return (
     <div>

@@ -1,11 +1,15 @@
 import React from 'react'
 import OrdersTable from './_components/OrderTable';
-import { getCurrentLocale } from '@/lib/getCurrentLocale';
+
 import getTrans from '@/lib/translation';
+import { Locale } from '@/i18n.config';
 
-export default async function page() {
-  const locale = await getCurrentLocale();
-
+export default async function page({
+  params,
+}: {
+  params: { locale: Locale };
+}) {
+  const locale = params.locale;
   const { t } = await getTrans(locale);
   return (
     <div>

@@ -14,6 +14,7 @@ import Trans from "@/components/trans";
 import Script from "next/script";
 import { getDictionary } from "@/lib/dictionary";
 import { getCurrentLocale } from "@/lib/getCurrentLocale";
+import getTrans from "@/lib/translation";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -22,9 +23,13 @@ const inter = Inter({
 });
 
 // Generate metadata dynamically based on locale
-export async function generateMetadata(): Promise<Metadata> {
-  const locale = await getCurrentLocale();
-  const dictionary = await getDictionary(locale);
+export async function generateMetadata({
+  params,
+}: {
+  params: { locale: Locale };
+}): Promise<Metadata> {
+  
+  const dictionary = await getDictionary(params.locale);
   
   
   return {
@@ -52,7 +57,7 @@ export default async function RootLayout({
   params: Promise<{ locale: Locale }>;
 }>) {
   const locale = (await params).locale;
-  const t = await Trans();
+  const {t} = await getTrans(locale);
   const { navigation } = t;
   const isAdminRoute = typeof window !== 'undefined' ? 
     window.location.pathname.includes('/admin') : 
@@ -85,7 +90,7 @@ export default async function RootLayout({
             {children}
             <ScrollTop />
           </main>
-          {!isAdminRoute && <Footer />}
+          {!isAdminRoute && <Footer  params={params}/>}
         </ReduxProvider>
         <Script
           strategy="afterInteractive"

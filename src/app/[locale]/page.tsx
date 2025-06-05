@@ -5,29 +5,34 @@ import ProductList from "@/components/Home/productList/ProductList";
 import ProductListSales from "@/components/Home/productListSales/ProductListSales";
 import Link from "@/components/link";
 import Title from "@/components/Title";
-import Trans from "@/components/trans";
-import { getCurrentLocale } from "@/lib/getCurrentLocale";
 import { Suspense } from "react";
 import Loading from "./loading";
 import { Metadata } from "next";
 import { getDictionary } from "@/lib/dictionary";
-
 import DiscountTimer from "@/components/Home/DiscountTimer";
+import getTrans from "@/lib/translation";
+import { Locale } from "@/i18n.config";
 
-export async function generateMetadata(): Promise<Metadata> {
-  const locale = await getCurrentLocale();
-  const dictionary = await getDictionary(locale);
-  
-  
+export async function generateMetadata({
+  params,
+}: {
+  params: { locale: Locale };
+}): Promise<Metadata> {
+  const dictionary = await getDictionary(params.locale);
+
   return {
     title: dictionary.metadata.home.title,
     description: dictionary.metadata.home.description,
   };
 }
 
-export default async function Home() {
-  const locale = await getCurrentLocale();
-  const t = await Trans();
+export default async function Home({
+  params,
+}: {
+  params: { locale: Locale };
+}) {
+  const locale = params.locale;
+  const { t } = await getTrans(locale);
   const { home } = t;
 
   return (
@@ -36,7 +41,7 @@ export default async function Home() {
         <div className="flex pt-[80px] h-[344px] items-center justify-center gap-15 w-full">
           <ImgSale />
         </div>
-        
+
         <div className="flex flex-col gap-4 items-start mt-40">
           <div className="flex flex-col md:flex-row gap-20 w-full mb-10">
             <Title title={home.todays} text={home.flashSales} />
@@ -46,13 +51,13 @@ export default async function Home() {
           </div>
           <ProductListSales t={t} locale={locale} filter={{ hasActiveDiscount: true }} />
         </div>
-        
+
         <div className="flex flex-col gap-4 items-start mt-40">
           <Title title={home.categories} text={home.browseByCategory} />
           <CategoriesList />
           <div className="w-full h-[1px] bg-[#E5E5E5] my-10"></div>
         </div>
-        
+
         <div className="flex flex-col gap-4 items-start mt-40">
           <div className="flex flex-col md:flex-row justify-between gap-20 w-full mb-10">
             <Title title={home.thisMonth} text={home.bestSellingProducts} />
@@ -68,8 +73,6 @@ export default async function Home() {
           <ProductList t={t} locale={locale} filter={{ bestSelling: true }} />
         </div>
 
-        {/* <ImgProduct /> */}
-        
         <div className="flex flex-col gap-4 items-start mt-40 mb-20">
           <div className="flex flex-col md:flex-row gap-20 w-full mb-10">
             <Title title={home.ourProducts} text={home.exploreOurProducts} />
@@ -80,9 +83,3 @@ export default async function Home() {
     </main>
   );
 }
-
-
-
-
-
-

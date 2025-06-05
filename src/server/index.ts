@@ -140,9 +140,9 @@ export const clearWishlist = () => api.delete("/api/wishlist/clear");
 
 // User endpoints
 export const getUsers = () => api.get("/api/user");
-export const updateUser = async (data: FormData) => {
+export const updateUser = async (data: FormData, userId: string) => {
   try {
-    const response = await api.put(`/api/user/${data.get("uId")}`, data, {
+    const response = await api.put(`/api/user/${userId}`, data, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
@@ -152,6 +152,7 @@ export const updateUser = async (data: FormData) => {
     throw error;
   }
 };
+
 export const registerUser = async (data: FormData) => {
   try {
     const response = await api.post("/api/user", data, {

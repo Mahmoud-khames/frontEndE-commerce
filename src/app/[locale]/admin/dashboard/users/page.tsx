@@ -1,12 +1,16 @@
+import { Locale } from "@/i18n.config";
 import UsersTable from "./_components/UsersTable";
 
 import getTrans from "@/lib/translation";
 
-import { getCurrentLocale } from "@/lib/getCurrentLocale";
 
-export default async function UsersPage() {
-  const locale = await getCurrentLocale();
 
+export default async function UsersPage({
+  params,
+}: {
+  params: { locale: Locale };
+}) {
+  const locale = params.locale;
   const { t } = await getTrans(locale);
 
   return (

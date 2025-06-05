@@ -1,81 +1,72 @@
 import { NextRequest, NextResponse } from "next/server";
-import { i18n } from "./i18n.config";
-import { LanguageType } from "./i18n.config";
+import { i18n, LanguageType } from "./i18n.config";
 
-// Get the preferred locale from request
-function getLocale(request: NextRequest) {
-  // Check for cookie first
-  const cookieLocale = request.cookies.get("NEXT_LOCALE")?.value;
+// تحديد اللغة المفضلة من الكوكي أو الهيدر أو استخدام الافتراضية
+function getPreferredLocale(request: NextRequest): LanguageType {
+  const cookieLocale = request.cookies.get("NEXT_LOCALE")?.value as LanguageType;
+
   if (cookieLocale && i18n.locales.includes(cookieLocale)) {
     return cookieLocale;
   }
 
-  // Check Accept-Language header
   const acceptLanguage = request.headers.get("Accept-Language") || "";
-  const locales = acceptLanguage.split(",")
-    .map(lang => lang.split(";")[0].trim())
-    .filter(lang => i18n.locales.some(locale => 
-      lang.startsWith(locale) || locale.startsWith(lang)
-    ));
+  const acceptedLocales = acceptLanguage
+    .split(",")
+    .map(lang => lang.split(";")[0].trim());
 
-  if (locales.length > 0) {
-    // Find the best match
-    for (const locale of locales) {
-      const exactMatch = i18n.locales.find(l => l === locale);
-      if (exactMatch) return exactMatch;
-      
-      const partialMatch = i18n.locales.find(l => 
-        locale.startsWith(l) || l.startsWith(locale)
-      );
-      if (partialMatch) return partialMatch;
-    }
+  for (const lang of acceptedLocales) {
+    const exact = i18n.locales.find(locale => locale === lang);
+    if (exact) return exact;
+
+    const partial = i18n.locales.find(locale =>
+      locale.startsWith(lang) || lang.startsWith(locale)
+    );
+    if (partial) return partial;
   }
 
-  // Default to the default locale
   return i18n.defaultLocale;
 }
 
-export default async function middleware(request: NextRequest) {
-  const pathname = request.nextUrl.pathname;
-  
-  // Skip middleware for static files and API routes
+export default function middleware(request: NextRequest) {
+  const { pathname, searchParams } = request.nextUrl;
+
+  // تخطِ الملفات الثابتة وواجهات الـ API
   if (
-    pathname.startsWith("/_next") || 
+    pathname.startsWith("/_next") ||
     pathname.startsWith("/api") ||
-    pathname.includes(".") // Static files like images, css, etc.
+    pathname.includes(".")
   ) {
     return NextResponse.next();
   }
 
-  // Check if path already has a locale
   const pathnameHasLocale = i18n.locales.some(
-    (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
+    (locale) => pathname === `/${locale}` || pathname.startsWith(`/${locale}/`)
   );
 
-  // If path already has locale, continue
   if (pathnameHasLocale) {
-    const requestHeaders = new Headers(request.headers);
-    requestHeaders.set("x-url", request.url);
+    const locale = pathname.split("/")[1] as LanguageType;
+    const response = NextResponse.next();
 
-    return NextResponse.next({
-      request: {
-        headers: requestHeaders,
-      },
-    });
+    // إذا لم تكن لغة الكوكي مضبوطة، نضبطها
+    if (!request.cookies.get("NEXT_LOCALE")) {
+      response.cookies.set("NEXT_LOCALE", locale, {
+        path: "/",
+        maxAge: 60 * 60 * 24 * 365, // سنة
+        sameSite: "strict",
+      });
+    }
+
+    return response;
   }
 
-  // If no locale in path, redirect to appropriate locale
-  const locale = getLocale(request);
-  const newUrl = new URL(`/${locale}${pathname || "/"}`, request.url);
-  
-  // Preserve query parameters
-  request.nextUrl.searchParams.forEach((value, key) => {
-    newUrl.searchParams.set(key, value);
-  });
-  
+  // لا يوجد لغة في الرابط → إعادة التوجيه
+  const preferredLocale = getPreferredLocale(request);
+  const newUrl = request.nextUrl.clone();
+  newUrl.pathname = `/${preferredLocale}${pathname}`;
+
   return NextResponse.redirect(newUrl);
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!api|_next|favicon.ico).*)"],
 };

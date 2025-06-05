@@ -77,14 +77,9 @@ export default function AddToCart({
 
   if (!translations) {
     return (
-      <div className="flex items-center justify-center w-full h-full text-center text-white">
-        <button
-          disabled
-          className="w-full h-full text-white cursor-not-allowed rounded-xl opacity-50"
-        >
-          Loading...
-        </button>
-      </div>
+      <button disabled className="w-full h-full text-white cursor-not-allowed rounded-xl opacity-50">
+        {locale === "ar" ? "...جاري التحميل" : "Loading..."}
+      </button>
     );
   }
 

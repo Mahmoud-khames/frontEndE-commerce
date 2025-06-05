@@ -1,8 +1,5 @@
 
-
-import { getCurrentLocale } from "@/lib/getCurrentLocale";
 import getTrans from "@/lib/translation";
-import { LanguageType } from "@/i18n.config";
 import ProfileForm from "@/components/account/ProfileForm";
 import Link from "@/components/link";
 import { Metadata } from "next";
@@ -18,9 +15,13 @@ export async function generateMetadata({ params }: { params: { locale: Locale } 
   };
 }
 
-export default async function ProfilePage() {
-  const locale = await getCurrentLocale();
-  const { t } = await getTrans(locale as LanguageType);
+export default async function ProfilePage({
+  params,
+}: {
+  params: { locale: Locale };
+}) {
+  const locale = params.locale;
+  const { t } = await getTrans(locale);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">

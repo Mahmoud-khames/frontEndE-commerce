@@ -6,6 +6,7 @@ import { Metadata } from "next";
 import { getDictionary } from "@/lib/dictionary";
 import AuthCheck from "./_components/AuthCheck";
 import { Locale } from "@/i18n.config";
+import getTrans from "@/lib/translation";
 
 export async function generateMetadata({
   params,
@@ -20,10 +21,15 @@ export async function generateMetadata({
   };
 }
 
-export default async function CartPage() {
-  const t = await Trans();
+export default async function CartPage({
+  params,
+}: {
+  params: { locale: Locale };
+}) {
+  const locale = params.locale;
+  const {t} = await getTrans(locale);
   const { navigation, cart, common } = t;
-  const locale = await getCurrentLocale();
+
   return (
     <div>
       <div className="flex justify-start items-start py-10 text-gray-600 gap-4">

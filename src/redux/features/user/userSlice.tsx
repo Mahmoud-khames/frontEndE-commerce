@@ -47,15 +47,19 @@ export const fetchUsers = createAsyncThunk(
 // إضافة updateUserProfile كـ createAsyncThunk
 export const updateUserProfile = createAsyncThunk(
   "user/updateUserProfile",
-  async (formData: FormData, { rejectWithValue }) => {
+  async (
+    { formData, userId }: { formData: FormData; userId: string },
+    { rejectWithValue }
+  ) => {
     try {
-      const response = await updateUser(formData);
+      const response = await updateUser(formData, userId);
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || "Failed to update profile");
     }
   }
 );
+
 
 const userSlice = createSlice({
   name: "user",

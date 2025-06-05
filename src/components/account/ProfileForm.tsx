@@ -54,7 +54,7 @@ export default function ProfileForm({ t }: { t: TranslationType }) {
   const [isPending, setIsPending] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const router = useRouter();
-  const apiURL = process.env.NEXT_PUBLIC_API_URL;
+  
   const dispatch = useAppDispatch();
 
   // Define form schema with Zod
@@ -95,6 +95,7 @@ export default function ProfileForm({ t }: { t: TranslationType }) {
       lastName: user?.lastName || "",
       email: user?.email || "",
       phone: user?.phone || "",
+
       currentPassword: "",
       newPassword: "",
       confirmPassword: "",
@@ -112,7 +113,7 @@ export default function ProfileForm({ t }: { t: TranslationType }) {
     } else {
       setPreviewImage('/user.jpg');
     }
-  }, [user, apiURL]);
+  }, [user]);
 
   // Handle image change
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -122,7 +123,7 @@ export default function ProfileForm({ t }: { t: TranslationType }) {
       setPreviewImage(URL.createObjectURL(file));
     }
   };
-
+  const userId = user._id || user.id;
   // Form submission handler
   const onSubmit = async (data: z.infer<typeof userSchema>) => {
     if (!user) return;
@@ -131,7 +132,7 @@ export default function ProfileForm({ t }: { t: TranslationType }) {
     const formDataToSend = new FormData();
     
     // Add user ID
-    formDataToSend.append('uId', user._id);
+    formDataToSend.append('uId', user._id );
     
     // Add text data
     formDataToSend.append('firstName', data.firstName);
@@ -160,7 +161,8 @@ export default function ProfileForm({ t }: { t: TranslationType }) {
     
     try {
       // Dispatch the updateUserProfile action
-      const resultAction = await dispatch(updateUserProfile(formDataToSend));
+      const resultAction = await dispatch(updateUserProfile({ formData: formDataToSend, userId }));
+
       
       if (updateUserProfile.fulfilled.match(resultAction)) {
         // If password change was requested, call the password change endpoint
@@ -172,7 +174,7 @@ export default function ProfileForm({ t }: { t: TranslationType }) {
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({
-                uId: user.id,
+                uId: user._id,
                 oldPassword: data.currentPassword,
                 newPassword: data.newPassword,
               }),

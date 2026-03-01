@@ -1,60 +1,66 @@
+// src/app/[locale]/checkout/page.tsx
 import Link from "@/components/link";
-
 import React from "react";
 import CheckoutForm from "./_components/CheckoutForm";
-import Payment from "./_components/Payment";
-import { getDictionary } from "@/lib/dictionary";
-
+import OrderSummary from "./_components/OrderSummary";
 import { Metadata } from "next";
-import { getCurrentLocale } from "@/lib/getCurrentLocale";
 import getTrans from "@/lib/translation";
 import { Locale } from "@/i18n.config";
 
 export async function generateMetadata({
   params,
 }: {
-  params: { locale: Locale };
+  params: Promise<{ locale: Locale }>;
 }): Promise<Metadata> {
-  
-  const dictionary = await getDictionary(params.locale);
-  
-  
+  const { locale } = await params;
+  const { t } = await getTrans(locale);
+
   return {
-    title: dictionary.metadata.checkout.title,
-    description: dictionary.metadata.checkout.description,
+    title: t.metadata?.checkout?.title || "Checkout",
+    description: t.metadata?.checkout?.description || "Complete your order",
   };
 }
-
 
 export default async function CheckoutPage({
   params,
 }: {
-  params: { locale: Locale };
+  params: Promise<{ locale: Locale }>;
 }) {
-  const locale = params.locale;
+  const { locale } = await params;
   const { t } = await getTrans(locale);
-  
+  const isRTL = locale === "ar";
+
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-start items-start py-10 text-gray-600 gap-4">
-        <Link href="/" className="text-gray-600">
-          {t.navigation.home}
+    <div className="container mx-auto px-4 py-8" dir={isRTL ? "rtl" : "ltr"}>
+      {/* Breadcrumb */}
+      <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
+        <Link href={`/${locale}`} className="hover:text-foreground transition-colors">
+          {t.navigation?.home || "Home"}
         </Link>
-        /
-        <Link href="/cart" className="text-black">
-          {t.navigation.cart}
+        <span>/</span>
+        <Link href={`/${locale}/cart`} className="hover:text-foreground transition-colors">
+          {t.navigation?.cart || "Cart"}
         </Link>
-        /
-        <Link href="/checkout" className="text-black">
-          {t.navigation.checkout}
-        </Link>
-      </div>
-      
-      <h1 className="text-3xl font-bold mb-8">{t.checkout.title}</h1>
-      
-      <div className="flex flex-col md:flex-row items-start justify-between w-full gap-10">
-        <CheckoutForm t={t} locale={locale} />
-        <Payment trans={t} locale={locale} />
+        <span>/</span>
+        <span className="text-foreground font-medium">
+          {t.navigation?.checkout || "Checkout"}
+        </span>
+      </nav>
+
+      <h1 className="text-3xl font-bold mb-8">
+        {t.checkout?.title || "Checkout"}
+      </h1>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Checkout Form - 2 columns */}
+        <div className="lg:col-span-2">
+          <CheckoutForm t={t} locale={locale} />
+        </div>
+
+        {/* Order Summary - 1 column */}
+        <div className="lg:col-span-1">
+          <OrderSummary t={t} locale={locale} />
+        </div>
       </div>
     </div>
   );

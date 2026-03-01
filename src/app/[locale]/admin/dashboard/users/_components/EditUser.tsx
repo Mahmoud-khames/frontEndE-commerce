@@ -1,22 +1,19 @@
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { toast } from "react-toastify";
-import { useAppDispatch } from "@/redux/hooks";
-import { fetchUsers } from "@/redux/features/user/userSlice";
+import { useUpdateUser } from "@/hooks/useUsers";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -35,26 +32,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { updateUser } from "@/server";
 import { Pencil, Loader2 } from "lucide-react";
 import Image from "next/image";
+import { Label } from "@/components/ui/label";
 
 export default function EditUser({
   user,
   t,
   locale,
 }: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   user: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   t: any;
   locale: string;
 }) {
   const [open, setOpen] = useState(false);
-  const [isPending, startTransition] = useTransition();
   const router = useRouter();
-  const dispatch = useAppDispatch();
+  const updateUserMutation = useUpdateUser();
   const [previewImage, setPreviewImage] = useState<string | null>(null);
-  const apiURL = process.env.NEXT_PUBLIC_API_URL;
-  // 🟡 1. أضف حالة تتبع تحميل الصورة
   const [isImageLoading, setIsImageLoading] = useState(false);
 
   // Define form schema with Zod
@@ -95,58 +91,49 @@ export default function EditUser({
     if (user.userImage) {
       setPreviewImage(user.userImage ? `${user.userImage}` : "/user.jpg");
     }
-  }, [user, apiURL, open]);
+  }, [user, open]);
 
   // Handle image change
-  // 🟡 2. عند تغيير الصورة نبدأ التحميل
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       form.setValue("userImage", file);
       setPreviewImage(URL.createObjectURL(file));
-      setIsImageLoading(true); // ابدأ التحميل
+      setIsImageLoading(true);
     }
   };
 
   const onSubmit = async (data: z.infer<typeof userSchema>) => {
+    const formDataToSend = new FormData();
+    formDataToSend.append("firstName", data.firstName);
+    formDataToSend.append("lastName", data.lastName);
+    formDataToSend.append("email", data.email);
+    formDataToSend.append("phone", data.phone || "");
+    formDataToSend.append("role", data.role);
+
+    // Only append password if it's not empty
+    if (data.password && data.password.trim() !== "") {
+      formDataToSend.append("password", data.password);
+    }
+
+    // Add user image if provided
+    if (data.userImage instanceof File) {
+      formDataToSend.append("userImage", data.userImage);
+    }
+
     try {
-      const formDataToSend = new FormData();
-      formDataToSend.append("firstName", data.firstName);
-      formDataToSend.append("lastName", data.lastName);
-      formDataToSend.append("email", data.email);
-      formDataToSend.append("phone", data.phone || "");
-      formDataToSend.append("role", data.role);
-
-      // Only append password if it's not empty
-      if (data.password && data.password.trim() !== "") {
-        formDataToSend.append("password", data.password);
-      }
-
-      // Add user image if provided
-      if (data.userImage instanceof File) {
-        formDataToSend.append("userImage", data.userImage);
-      }
-
-      startTransition(() => {
-        updateUser(formDataToSend, user._id)
-          .then((response) => {
-            toast.success(
-              response.data.message ||
-                t.admin.userUpdatedSuccessfully ||
-                "User updated successfully"
-            );
-            dispatch(fetchUsers());
-            setOpen(false);
-            router.refresh();
-          })
-          .catch((error) => {
-            toast.error(error.message || t.common.error || "An error occurred");
-          });
+      await updateUserMutation.mutateAsync({
+        id: user._id,
+        userData: formDataToSend,
       });
-    } catch (error: any) {
-      toast.error(error.message || t.common.error || "An error occurred");
+      setOpen(false);
+      router.refresh();
+    } catch {
+      // Error handled by hook
     }
   };
+
+  const isPending = updateUserMutation.isPending;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -309,8 +296,8 @@ export default function EditUser({
                       alt={t.admin.userImagePreview || "User image preview"}
                       fill
                       className="object-cover"
-                      onLoad={() => setIsImageLoading(false)} // عند نجاح تحميل الصورة
-                      onError={() => setIsImageLoading(false)} // عند فشل تحميل الصورة
+                      onLoad={() => setIsImageLoading(false)}
+                      onError={() => setIsImageLoading(false)}
                     />
                   </div>
                 </div>

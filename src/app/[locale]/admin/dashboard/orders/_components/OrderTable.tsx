@@ -1,9 +1,11 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { getOrders, updateOrderStatus, deleteOrder } from "@/server";
-import { useAppSelector } from "@/redux/hooks";
-import { toast } from "react-toastify";
+import React, { useState } from "react";
+import {
+  useAllOrders,
+  useUpdateOrderStatus,
+  useDeleteOrder,
+} from "@/hooks/useOrders";
 import {
   Table,
   TableBody,
@@ -35,59 +37,23 @@ import {
 } from "@/components/ui/alert-dialog";
 import OrderDetails from "./OrderDetails";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function OrdersTable({ t, locale }: { t: any; locale: string }) {
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedOrder, setSelectedOrder] = useState(null);
-  const { user } = useAppSelector((state) => state.user);
+  const { data: response, isLoading: loading } = useAllOrders();
+  const orders = response?.data || [];
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
+  const updateStatusMutation = useUpdateOrderStatus();
+  const deleteOrderMutation = useDeleteOrder();
 
-  const fetchOrders = async () => {
-    try {
-      setLoading(true);
-      const response = await getOrders();
-      if (response.data.success) {
-        setOrders(response.data.data);
-      }
-    } catch (error) {
-      console.error("Error fetching orders:", error);
-      toast.error("Failed to load orders");
-    } finally {
-      setLoading(false);
-    }
-  };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
 
   const handleStatusChange = async (orderId: string, status: string) => {
-    try {
-      const response = await updateOrderStatus(orderId, status);
-      if (response.data.success) {
-        toast.success("Order status updated successfully");
-        fetchOrders(); // Refresh orders list
-      } else {
-        toast.error(response.data.message || "Failed to update order status");
-      }
-    } catch (error) {
-      console.error("Error updating order status:", error);
-      toast.error("Failed to update order status");
-    }
+    updateStatusMutation.mutate({ id: orderId, status });
   };
 
   const handleDeleteOrder = async (orderId: string) => {
-    try {
-      const response = await deleteOrder(orderId);
-      if (response.data.success) {
-        toast.success("Order deleted successfully");
-        fetchOrders(); // Refresh orders list
-      } else {
-        toast.error(response.data.message || "Failed to delete order");
-      }
-    } catch (error) {
-      console.error("Error deleting order:", error);
-      toast.error("Failed to delete order");
-    }
+    deleteOrderMutation.mutate(orderId);
   };
 
   const getStatusColor = (status: string) => {
@@ -115,12 +81,18 @@ export default function OrdersTable({ t, locale }: { t: any; locale: string }) {
   // Add a helper function to translate status
   const getStatusTranslation = (status: string) => {
     switch (status) {
-      case "Pending": return t.admin.pending;
-      case "Processing": return t.admin.processing;
-      case "Shipped": return t.admin.shipped;
-      case "Delivered": return t.admin.delivered;
-      case "Cancelled": return t.admin.cancelled;
-      default: return status;
+      case "Pending":
+        return t.admin.pending;
+      case "Processing":
+        return t.admin.processing;
+      case "Shipped":
+        return t.admin.shipped;
+      case "Delivered":
+        return t.admin.delivered;
+      case "Cancelled":
+        return t.admin.cancelled;
+      default:
+        return status;
     }
   };
 
@@ -156,7 +128,8 @@ export default function OrdersTable({ t, locale }: { t: any; locale: string }) {
                   </TableCell>
                 </TableRow>
               ) : (
-                orders.map((order : any) => (
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                orders.map((order: any) => (
                   <TableRow key={order._id}>
                     <TableCell className="font-medium">
                       {order._id.substring(0, 8)}...
@@ -178,22 +151,39 @@ export default function OrdersTable({ t, locale }: { t: any; locale: string }) {
                             order.status
                           )}`}
                         >
-                          <SelectValue placeholder={getStatusTranslation(order.status)} />
+                          <SelectValue
+                            placeholder={getStatusTranslation(order.status)}
+                          />
                         </SelectTrigger>
                         <SelectContent className="bg-white ">
-                          <SelectItem value="Pending" className="text-yellow-800">
+                          <SelectItem
+                            value="Pending"
+                            className="text-yellow-800"
+                          >
                             {t.admin.pending}
                           </SelectItem>
-                          <SelectItem value="Processing" className="text-blue-800">
+                          <SelectItem
+                            value="Processing"
+                            className="text-blue-800"
+                          >
                             {t.admin.processing}
                           </SelectItem>
-                          <SelectItem value="Shipped" className="text-purple-800">
+                          <SelectItem
+                            value="Shipped"
+                            className="text-purple-800"
+                          >
                             {t.admin.shipped}
                           </SelectItem>
-                          <SelectItem value="Delivered" className="text-green-800">
+                          <SelectItem
+                            value="Delivered"
+                            className="text-green-800"
+                          >
                             {t.admin.delivered}
                           </SelectItem>
-                          <SelectItem value="Cancelled" className="text-red-800">
+                          <SelectItem
+                            value="Cancelled"
+                            className="text-red-800"
+                          >
                             {t.admin.cancelled}
                           </SelectItem>
                         </SelectContent>
@@ -252,7 +242,6 @@ export default function OrdersTable({ t, locale }: { t: any; locale: string }) {
           order={selectedOrder}
           onClose={() => setSelectedOrder(null)}
           onStatusChange={handleStatusChange}
-        
           locale={locale}
         />
       )}

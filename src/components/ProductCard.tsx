@@ -4,7 +4,7 @@ import { Eye } from "lucide-react";
 import Image from "next/image";
 import React, { useState } from "react";
 import renderStars from "./renderStars";
-import { IProduct } from "@/types/type";
+import { Product } from "@/types";
 import Link from "@/components/link";
 import AddToCart from "./Cart/addToCart";
 import AddToWishList from "./Wishlist/AddToWishList";
@@ -16,8 +16,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 // إضافة مكون ProductCardSkeleton
 export function ProductCardSkeleton() {
   return (
-    <div className="product-item flex flex-col items-center w-[270px] h-[350px] flex-shrink-0 relative">
-      <div className="relative w-[270px] h-[250px] overflow-hidden bg-[#f5f5f5]">
+    <div className="product-item flex flex-col items-center w-full max-w-[270px] h-[350px] flex-shrink-0 relative">
+      <div className="relative w-full h-[250px] overflow-hidden bg-[#f5f5f5]">
         {/* صورة المنتج */}
         <Skeleton className="h-full w-full" />
 
@@ -46,13 +46,14 @@ export function ProductCardSkeleton() {
 export default function ProductCard({
   product,
   isLoading = false,
+  t,
 }: {
-  product: IProduct;
+  product: Product;
   isLoading?: boolean;
+  t?: any;
 }) {
   const pathname = usePathname();
   const { locale } = useParams();
-  const apiURL = process.env.NEXT_PUBLIC_API_URL;
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
@@ -63,7 +64,6 @@ export default function ProductCard({
 
   // التعامل مع أخطاء تحميل الصورة
   const handleImageError = () => {
-    console.error(`Error loading image: ${product?.productImage}`);
     setImageError(true);
   };
 
@@ -78,7 +78,6 @@ export default function ProductCard({
       ? new Date(product.productDiscountEndDate)
       : null;
 
-    // التحقق من أن الخصم نشط وأن تاريخ انتهاء الخصم لم يمر بعد
     if (
       product.hasActiveDiscount &&
       product.productDiscountPrice > 0 &&
@@ -97,7 +96,6 @@ export default function ProductCard({
       ? new Date(product.productDiscountEndDate)
       : null;
 
-    // التحقق من أن الخصم نشط وأن تاريخ انتهاء الخصم لم يمر بعد
     if (
       product.hasActiveDiscount &&
       product.productDiscountPrice > 0 &&
@@ -119,7 +117,6 @@ export default function ProductCard({
       ? new Date(product.productDiscountEndDate)
       : null;
 
-    // التحقق من أن الخصم نشط وأن تاريخ انتهاء الخصم لم يمر بعد
     if (
       product.hasActiveDiscount &&
       product.productDiscountPercentage > 0 &&
@@ -149,23 +146,21 @@ export default function ProductCard({
         discountEndDate &&
         now <= discountEndDate) ||
       (product.oldProductPrice && product.oldProductPrice > 0) ||
-      (product.productDiscountPercentage  > 0) ||       
-      (product.productDiscount > 0)
-
-
+      product.productDiscountPercentage > 0 ||
+      product.productDiscount > 0
     );
   };
 
   return (
     <div
       key={product._id}
-      className="product-item flex flex-col items-center w-[270px] h-[350px] flex-shrink-0 relative group"
+      className="product-item flex flex-col items-center w-full max-w-[270px] h-[350px] flex-shrink-0 relative group"
     >
-      <div className="relative w-[270px] h-[250px] overflow-hidden bg-[#f5f5f5]">
+      <div className="relative w-full h-[250px] overflow-hidden bg-[#f5f5f5]">
         {/* Image Container */}
         <div className="h-full bg-gray-200 flex items-center justify-center group-hover:scale-105 transition-all duration-300 z-0">
           {!imageLoaded && !imageError && (
-            <Skeleton className="w-[190px] h-[170px]" />
+            <Skeleton className="w-[70%] h-[70%]" />
           )}
 
           {product.productImage && (
@@ -177,8 +172,22 @@ export default function ProductCard({
               }
               width={190}
               height={170}
-              alt={product?.productName}
-              className={`object-contain w-[190px] h-[170px] ${
+              alt={
+                locale === "ar"
+                  ? product.productNameAr ||
+                    (typeof product.productName === "object" &&
+                      (product.productName as any)["ar"]) ||
+                    (product.productName as string) ||
+                    product.productNameEn ||
+                    "Product Image"
+                  : product.productNameEn ||
+                    (typeof product.productName === "object" &&
+                      (product.productName as any)["en"]) ||
+                    (product.productName as string) ||
+                    product.productNameAr ||
+                    "Product Image"
+              }
+              className={`object-contain max-w-[90%] max-h-[90%] w-auto h-auto ${
                 !imageLoaded && !imageError ? "invisible" : "visible"
               }`}
               onError={handleImageError}
@@ -190,19 +199,20 @@ export default function ProductCard({
         {/* Badges Container */}
         <div className="absolute top-2 left-2 flex flex-col gap-2">
           {/* Discount Badge */}
-          {hasDiscount() &&
-            getDiscountPercentage() && (
-              <div className="w-14 h-7 bg-secondary rounded flex items-center justify-center">
-                <p className="text-white text-[12px] font-semibold">
-                  -{getDiscountPercentage()}%
-                </p>
-              </div>
-            )}
+          {hasDiscount() && getDiscountPercentage() && (
+            <div className="w-14 h-7 bg-secondary rounded flex items-center justify-center">
+              <p className="text-white text-[12px] font-semibold">
+                -{getDiscountPercentage()}%
+              </p>
+            </div>
+          )}
 
           {/* New Badge */}
           {product.NEW && (
             <div className="w-14 h-7 bg-green-400 rounded flex items-center justify-center">
-              <p className="text-white text-[12px] font-semibold">NEW</p>
+              <p className="text-white text-[12px] font-semibold">
+                {t?.home?.formattedDate || "NEW"}
+              </p>
             </div>
           )}
         </div>
@@ -263,7 +273,18 @@ export default function ProductCard({
       <div className="flex flex-col items-start w-full px-2">
         <div className="flex items-center justify-between w-full mt-4">
           <p className="text-[#000000] text-[16px] font-medium truncate max-w-full">
-            {product.productName}
+            {locale === "ar"
+              ? product.productNameAr ||
+                (typeof product.productName === "object" &&
+                  (product.productName as any)["ar"]) ||
+                product.productName ||
+                product.productNameEn
+              : product.productNameEn ||
+                (typeof product.productName === "object" &&
+                  (product.productName as any)["en"]) ||
+                product.productName ||
+                product.productNameAr ||
+                "Product Name"}
           </p>
         </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Dialog,
@@ -14,46 +14,70 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { toast } from "react-toastify";
-import { useAppDispatch } from "@/redux/hooks";
-import { fetchUsers } from "@/redux/features/user/userSlice";
+import { useCreateUser } from "@/hooks/useUsers";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { registerUser } from "@/server";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { PlusCircle, Loader2 } from "lucide-react";
 import Image from "next/image";
 
-export default function AddUser({
-  t,
-  locale,
-}: {
-  t: any;
-  locale: string;
-}) {
+export default function AddUser({ t, locale }: { t: any; locale: string }) {
   const [open, setOpen] = useState(false);
-  const [isPending, startTransition] = useTransition();
   const router = useRouter();
-  const dispatch = useAppDispatch();
+  const createUserMutation = useCreateUser();
   const [previewImage, setPreviewImage] = useState<string | null>(null);
-  const apiURL = process.env.NEXT_PUBLIC_API_URL;
 
   // Define form schema with Zod
-  const userSchema = z.object({
-    firstName: z.string().min(2, { message: t.admin.minFirstNameLength || "First name must be at least 2 characters" }),
-    lastName: z.string().min(2, { message: t.admin.minLastNameLength || "Last name must be at least 2 characters" }),
-    email: z.string().email({ message: t.admin.invalidEmail || "Invalid email address" }),
-    password: z.string().min(6, { message: t.admin.minPasswordLength || "Password must be at least 6 characters" }),
-    cPassword: z.string(),
-    phone: z.string().optional(),
-    role: z.string().default("user"),
-    userImage: z.any().optional(),
-  }).refine((data) => data.password === data.cPassword, {
-    message: t.admin.passwordsDoNotMatch || "Passwords do not match",
-    path: ["cPassword"],
-  });
+  const userSchema = z
+    .object({
+      firstName: z
+        .string()
+        .min(2, {
+          message:
+            t.admin.minFirstNameLength ||
+            "First name must be at least 2 characters",
+        }),
+      lastName: z
+        .string()
+        .min(2, {
+          message:
+            t.admin.minLastNameLength ||
+            "Last name must be at least 2 characters",
+        }),
+      email: z
+        .string()
+        .email({ message: t.admin.invalidEmail || "Invalid email address" }),
+      password: z
+        .string()
+        .min(6, {
+          message:
+            t.admin.minPasswordLength ||
+            "Password must be at least 6 characters",
+        }),
+      cPassword: z.string(),
+      phone: z.string().optional(),
+      role: z.string().default("user"),
+      userImage: z.any().optional(),
+    })
+    .refine((data) => data.password === data.cPassword, {
+      message: t.admin.passwordsDoNotMatch || "Passwords do not match",
+      path: ["cPassword"],
+    });
 
   // Setup form with React Hook Form and Zod
   const form = useForm<z.infer<typeof userSchema>>({
@@ -77,41 +101,31 @@ export default function AddUser({
   };
 
   const onSubmit = async (data: z.infer<typeof userSchema>) => {
-    setIsPending(true);
-    
+    const formDataToSend = new FormData();
+    formDataToSend.append("firstName", data.firstName);
+    formDataToSend.append("lastName", data.lastName);
+    formDataToSend.append("email", data.email);
+    formDataToSend.append("phone", data.phone || "");
+    formDataToSend.append("password", data.password);
+    formDataToSend.append("role", data.role);
+
+    // Add user image if provided
+    if (data.userImage) {
+      formDataToSend.append("userImage", data.userImage);
+    }
+
     try {
-      const formDataToSend = new FormData();
-      formDataToSend.append("firstName", data.firstName);
-      formDataToSend.append("lastName", data.lastName);
-      formDataToSend.append("email", data.email);
-      formDataToSend.append("phone", data.phone || "");
-      formDataToSend.append("password", data.password);
-      formDataToSend.append("role", data.role);
-      
-      // Add user image if provided
-      if (data.userImage) {
-        formDataToSend.append("userImage", data.userImage);
-      }
-      
-      startTransition(async () => {
-        try {
-          const response = await registerUser(formDataToSend);
-          toast.success(response.data.message || t.admin.userAddedSuccessfully || "User added successfully");
-          dispatch(fetchUsers());
-          setOpen(false);
-          form.reset();
-          router.refresh();
-        } catch (error: any) {
-          toast.error(error.response?.data?.message || t.common.error || "An error occurred");
-        } finally {
-          setIsPending(false);
-        }
-      });
-    } catch (error: any) {
-      toast.error(error.message || t.common.error || "An error occurred");
-      setIsPending(false);
+      await createUserMutation.mutateAsync(formDataToSend);
+      setOpen(false);
+      form.reset();
+      setPreviewImage(null);
+      router.refresh(); // Refresh if needed, though mutation invalidates queries
+    } catch {
+      // Error handled by hook
     }
   };
+
+  const isPending = createUserMutation.isPending;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -125,7 +139,8 @@ export default function AddUser({
         <DialogHeader>
           <DialogTitle>{t.admin.addNewUser || "Add New User"}</DialogTitle>
           <DialogDescription>
-            {t.admin.fillUserDetails || "Fill in the details to add a new user."}
+            {t.admin.fillUserDetails ||
+              "Fill in the details to add a new user."}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -138,7 +153,12 @@ export default function AddUser({
                   <FormItem>
                     <FormLabel>{t.admin.firstName || "First Name"}</FormLabel>
                     <FormControl>
-                      <Input placeholder={t.admin.enterFirstName || "Enter first name"} {...field} />
+                      <Input
+                        placeholder={
+                          t.admin.enterFirstName || "Enter first name"
+                        }
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -151,14 +171,17 @@ export default function AddUser({
                   <FormItem>
                     <FormLabel>{t.admin.lastName || "Last Name"}</FormLabel>
                     <FormControl>
-                      <Input placeholder={t.admin.enterLastName || "Enter last name"} {...field} />
+                      <Input
+                        placeholder={t.admin.enterLastName || "Enter last name"}
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
-            
+
             <FormField
               control={form.control}
               name="email"
@@ -166,13 +189,17 @@ export default function AddUser({
                 <FormItem>
                   <FormLabel>{t.admin.email || "Email"}</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder={t.admin.enterEmail || "Enter email"} {...field} />
+                    <Input
+                      type="email"
+                      placeholder={t.admin.enterEmail || "Enter email"}
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="phone"
@@ -180,13 +207,17 @@ export default function AddUser({
                 <FormItem>
                   <FormLabel>{t.admin.phone || "Phone"}</FormLabel>
                   <FormControl>
-                    <Input type="text" placeholder={t.admin.enterPhone || "Enter phone number"} {...field} />
+                    <Input
+                      type="text"
+                      placeholder={t.admin.enterPhone || "Enter phone number"}
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -195,7 +226,11 @@ export default function AddUser({
                   <FormItem>
                     <FormLabel>{t.admin.password || "Password"}</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder={t.admin.enterPassword || "Enter password"} {...field} />
+                      <Input
+                        type="password"
+                        placeholder={t.admin.enterPassword || "Enter password"}
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -206,38 +241,55 @@ export default function AddUser({
                 name="cPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t.admin.confirmPassword || "Confirm Password"}</FormLabel>
+                    <FormLabel>
+                      {t.admin.confirmPassword || "Confirm Password"}
+                    </FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder={t.admin.confirmPassword || "Confirm password"} {...field} />
+                      <Input
+                        type="password"
+                        placeholder={
+                          t.admin.confirmPassword || "Confirm password"
+                        }
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
-            
+
             <FormField
               control={form.control}
               name="role"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t.admin.role || "Role"}</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder={t.admin.selectRole || "Select role"} />
+                        <SelectValue
+                          placeholder={t.admin.selectRole || "Select role"}
+                        />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="user">{t.admin.user || "User"}</SelectItem>
-                      <SelectItem value="admin">{t.admin.admin || "Admin"}</SelectItem>
+                      <SelectItem value="user">
+                        {t.admin.user || "User"}
+                      </SelectItem>
+                      <SelectItem value="admin">
+                        {t.admin.admin || "Admin"}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <div className="space-y-2">
               <Label>{t.admin.userImage || "User Image"}</Label>
               <Input
@@ -258,9 +310,13 @@ export default function AddUser({
                 </div>
               )}
             </div>
-            
+
             <DialogFooter>
-              <Button type="submit" disabled={isPending} className="bg-secondary hover:bg-secondary/90">
+              <Button
+                type="submit"
+                disabled={isPending}
+                className="bg-secondary hover:bg-secondary/90"
+              >
                 {isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -277,5 +333,3 @@ export default function AddUser({
     </Dialog>
   );
 }
-
-

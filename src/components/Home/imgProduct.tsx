@@ -24,7 +24,7 @@ export default function ImgProduct() {
   // دالة لحساب الوقت المتبقي
   const calculateTimeLeft = () => {
     const now = new Date();
-    const difference = targetDate - now;
+    const difference = Number(targetDate) - Number(now);
 
     if (difference <= 0) {
       return { days: 0, hours: 0, minutes: 0, seconds: 0 };
@@ -48,7 +48,7 @@ export default function ImgProduct() {
 
     // تنظيف الـ Interval عند إلغاء المكون
     return () => clearInterval(timer);
-  }, []);
+  }, [calculateTimeLeft]);
 
   // محاكاة تحميل الصورة
   useEffect(() => {
@@ -62,7 +62,9 @@ export default function ImgProduct() {
     <div className="w-full flex flex-col md:flex-row items-center justify-center my-10 md:my-20 bg-black h-auto md:h-[500px] gap-5 md:gap-10 p-4 md:p-8">
       {/* content */}
       <div className="w-full md:w-[400px] h-full flex items-start flex-col gap-2 justify-center py-6 md:py-0">
-        <h4 className="text-popover text-[14px] md:text-[16px] font-medium">Categories</h4>
+        <h4 className="text-popover text-[14px] md:text-[16px] font-medium">
+          Categories
+        </h4>
         <p className="text-[24px] md:text-[28px] lg:text-[48px] font-semibold leading-tight md:leading-[60px] text-white">
           Enhance Your Music Experience
         </p>
@@ -96,7 +98,7 @@ export default function ImgProduct() {
           <div className="flex flex-col items-center">
             <div className="bg-white text-black rounded-full md:w-16 md:h-16 w-14 h-14 flex flex-col items-center justify-center text-[12px] md:text-[18px] ">
               <span className="text-black font-bold">
-                    {timeLeft.seconds.toString().padStart(2, "0")}
+                {timeLeft.seconds.toString().padStart(2, "0")}
               </span>
               <span className="text-black text-[12px] ">Seconds</span>
             </div>

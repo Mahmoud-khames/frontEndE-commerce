@@ -3,22 +3,32 @@ import WishListItems from "./_component/WishListItems";
 import { getCurrentLocale } from "@/lib/getCurrentLocale";
 import Trans from "@/components/trans";
 import { Metadata } from "next";
-import { getDictionary } from "@/lib/dictionary";
+import { getMessages } from "next-intl/server";
+import getTrans from "@/lib/translation";
 import { Locale } from "@/i18n.config";
 
-export async function generateMetadata({ params }: { params: { locale: Locale } }): Promise<Metadata> {
-  const dictionary = await getDictionary(params.locale);
-  
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: Locale }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const dictionary: any = await getMessages({ locale });
+
   return {
     title: dictionary.metadata.wishlist.title,
     description: dictionary.metadata.wishlist.description,
   };
 }
 
-export default async function WishlistPage() {
-  const t = await Trans();
+export default async function WishlistPage({
+  params,
+}: {
+  params: Promise<{ locale: Locale }>;
+}) {
+  const { locale } = await params;
+  const { t } = await getTrans(locale);
   const { navigation, wishlist } = t;
-  const locale = await getCurrentLocale();
   const isRTL = locale === "ar";
 
   return (

@@ -2,30 +2,21 @@
 
 import { Heart } from "lucide-react";
 import Link from "../link";
-import { useAppSelector, useAppDispatch } from "@/redux/hooks";
-import { selectWishlistItems, fetchWishlistItems } from "@/redux/features/wishList/wishlistSlice";
-import { useEffect, useState } from "react";
+import { useWishlist } from "@/hooks";
+import { useMemo } from "react";
 import { useParams } from "next/navigation";
 
 export default function LoveProdects() {
   const { locale } = useParams();
-  const wishlist = useAppSelector(selectWishlistItems);
-  const { user } = useAppSelector((state) => state.user);
-  const dispatch = useAppDispatch();
-  const [wishlistCount, setWishlistCount] = useState(0);
-  
-  // Update wishlist count whenever wishlist changes
-  useEffect(() => {
-    setWishlistCount(wishlist.length);
+  const { data } = useWishlist();
+    const wishlist = data?.data;
+  console.log("data",data);
+
+  // Calculate wishlist count
+  const wishlistCount = useMemo(() => {
+    if (!wishlist) return 0;
+    return wishlist.count || 0;
   }, [wishlist]);
-  
-  // Fetch wishlist items when component mounts or user changes
-  useEffect(() => {
-    // If user is logged in, fetch their wishlist from the server
-    if (user) {
-      dispatch(fetchWishlistItems());
-    }
-  }, [user, dispatch]);
 
   return (
     <Link href={`/${locale}/wishlist`} className="flex items-center justify-center relative cursor-pointer">

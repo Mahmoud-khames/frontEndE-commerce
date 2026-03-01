@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useParams, usePathname } from "next/navigation";
@@ -13,24 +12,22 @@ import { navBar } from "../../data/data";
 import { cn } from "@/lib/utils";
 import LanguageSwitcher from "./language-switcher";
 import User from "./user";
-import { useAppSelector, useAppDispatch } from "@/redux/hooks";
-import { logout } from "@/redux/features/user/userSlice";
-import { clearCart } from "@/redux/features/cart/cartSlice";
+import { useAuth } from "@/providers";
 import { Pages } from "@/constants/enums";
 
-export default function Header({ t }: any) {
-  const dispatch = useAppDispatch();
+export default function Header({
+  t,
+  messages,
+}: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  t: any;
+  messages: any;
+}) {
   const pathname = usePathname();
   const { locale } = useParams();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const { user } = useAppSelector((state) => state.user);
-
-  // Add a function to handle logout
-  const handleLogout = () => {
-    dispatch(logout());
-    dispatch(clearCart());
-  };
+  const { user } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -53,7 +50,9 @@ export default function Header({ t }: any) {
       <nav className="max-w-7xl mx-auto px-4 md:px-6 flex items-center justify-between py-3 md:py-5">
         {/* Logo */}
         <Link href={`/${locale}/`} className="flex-shrink-0">
-          <h1 className="text-Text-foreground font-bold text-xl md:text-2xl">{t.logo}</h1>
+          <h1 className="text-Text-foreground font-bold text-xl md:text-2xl">
+            {t.logo}
+          </h1>
         </Link>
 
         {/* Desktop Navigation */}
@@ -78,13 +77,13 @@ export default function Header({ t }: any) {
         {/* Right Actions */}
         <div className="flex items-center gap-2 sm:gap-4 md:gap-6">
           <div className="hidden md:block w-auto max-w-[200px] lg:max-w-none">
-            <Search search={t.search} />
+            <Search search={t.search} messages={messages} />
           </div>
 
           <div className="flex items-center gap-3 md:gap-6">
             <LoveProdects />
             <ShoppingCartProduct />
-            {user && <User t={t} onLogout={handleLogout} />}
+            {user && <User t={t} />}
             <LanguageSwitcher />
           </div>
 

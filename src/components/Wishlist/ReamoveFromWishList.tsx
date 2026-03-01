@@ -1,25 +1,24 @@
 "use client";
-import { removeFromWishlist, removeFromWishlistAsync } from "@/redux/features/wishList/wishlistSlice";
-import React from "react";
 
-import { useAppDispatch, useAppSelector } from "@/redux/hooks";
-import { IProduct } from "@/types/type";
+import { useCallback } from "react";
+import { useRemoveFromWishlist } from "@/hooks";
+import { Product } from "@/types";
 import { Button } from "../ui/button";
 import { Trash } from "lucide-react";
-import { toast } from "react-toastify";
+import { toast } from "react-hot-toast";
 
-export default function ReamoveFromWishList({ product }: { product: IProduct }) {
-  const dispatch = useAppDispatch();
-  const { user } = useAppSelector((state) => state.user);
+export default function RemoveFromWishList({ product }: { product: Product }) {
+  const removeFromWishlistMutation = useRemoveFromWishlist();
 
-  const handleRemoveFromWishlist = () => {
-    if (user) {
-      dispatch(removeFromWishlistAsync(product._id));
-    } else {
-      dispatch(removeFromWishlist(product._id));
+  const handleRemoveFromWishlist = useCallback(async () => {
+    try {
+      await removeFromWishlistMutation.mutateAsync(product._id);
       toast.success(`${product.productName} removed from wishlist!`);
+    } catch (error) {
+      toast.error("Failed to remove from wishlist");
+      console.error(error);
     }
-  };
+  }, [product, removeFromWishlistMutation]);
 
   return (
     <Button

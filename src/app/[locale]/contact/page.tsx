@@ -4,18 +4,16 @@ import Link from "@/components/link";
 import getTrans from "@/lib/translation";
 import { Locale } from "@/i18n.config";
 import { Metadata } from "next";
-import { getDictionary } from "@/lib/dictionary";
-
+import { getMessages } from "next-intl/server";
 
 export async function generateMetadata({
   params,
 }: {
-  params: { locale: Locale };
+  params: Promise<{ locale: Locale }>;
 }): Promise<Metadata> {
-  
-  const dictionary = await getDictionary(params.locale);
-  
-  
+  const { locale } = await params;
+  const dictionary: any = await getMessages({ locale });
+
   return {
     title: dictionary.metadata.contact.title,
     description: dictionary.metadata.contact.description,
@@ -25,14 +23,14 @@ export async function generateMetadata({
 export default async function Contact({
   params,
 }: {
-  params: { locale: Locale };
+  params: Promise<{ locale: Locale }>;
 }) {
-  const locale = params.locale;
+  const { locale } = await params;
   const { t } = await getTrans(locale);
   return (
     <>
       <div className="flex justify-start items-start py-10 text-gray-600 gap-4">
-        <Link href={`/${locale  }`} className="text-gray-600">
+        <Link href={`/${locale}`} className="text-gray-600">
           {t.navigation.home}
         </Link>
         /
@@ -52,11 +50,11 @@ export default async function Contact({
                   <div className="bg-[#DB4444] p-2 rounded-full">
                     <Phone className="w-6 h-6 text-white" />
                   </div>
-                  <h3 className="text-xl font-semibold">{t.contact.callToUs}</h3>
+                  <h3 className="text-xl font-semibold">
+                    {t.contact.callToUs}
+                  </h3>
                 </div>
-                <p className="mt-4 text-gray-600">
-                  {t.contact.available}
-                </p>
+                <p className="mt-4 text-gray-600">{t.contact.available}</p>
                 <p className="mt-2 text-gray-600">{t.contact.phone2}</p>
               </div>
 
@@ -69,17 +67,13 @@ export default async function Contact({
                   <div className="bg-[#DB4444] p-2 rounded-full">
                     <Mail className="w-6 h-6 text-white" />
                   </div>
-                  <h3 className="text-xl font-semibold">{t.contact.writeToUs}</h3>
+                  <h3 className="text-xl font-semibold">
+                    {t.contact.writeToUs}
+                  </h3>
                 </div>
-                <p className="mt-4 text-gray-600">
-                  {t.contact.fillForm}
-                </p>
-                <p className="mt-2 text-gray-600">
-                  {t.contact.emails}
-                </p>
-                <p className="text-gray-600">
-                  {t.contact.support}
-                </p>
+                <p className="mt-4 text-gray-600">{t.contact.fillForm}</p>
+                <p className="mt-2 text-gray-600">{t.contact.emails}</p>
+                <p className="text-gray-600">{t.contact.support}</p>
               </div>
             </div>
 

@@ -3,7 +3,7 @@ import Link from "@/components/link";
 import Trans from "@/components/trans";
 import { getCurrentLocale } from "@/lib/getCurrentLocale";
 import { Metadata } from "next";
-import { getDictionary } from "@/lib/dictionary";
+import { getMessages } from "next-intl/server";
 import AuthCheck from "./_components/AuthCheck";
 import { Locale } from "@/i18n.config";
 import getTrans from "@/lib/translation";
@@ -11,9 +11,10 @@ import getTrans from "@/lib/translation";
 export async function generateMetadata({
   params,
 }: {
-  params: { locale: Locale };
+  params: Promise<{ locale: Locale }>;
 }): Promise<Metadata> {
-  const dictionary = await getDictionary(params.locale);
+  const { locale } = await params;
+  const dictionary: any = await getMessages({ locale });
 
   return {
     title: dictionary.metadata.cart.title,
@@ -24,10 +25,10 @@ export async function generateMetadata({
 export default async function CartPage({
   params,
 }: {
-  params: { locale: Locale };
+  params: Promise<{ locale: Locale }>;
 }) {
-  const locale = params.locale;
-  const {t} = await getTrans(locale);
+  const { locale } = await params;
+  const { t } = await getTrans(locale);
   const { navigation, cart, common } = t;
 
   return (

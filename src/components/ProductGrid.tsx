@@ -2,21 +2,28 @@
 
 import React from "react";
 import ProductCard, { ProductCardSkeleton } from "./ProductCard";
-import { IProduct } from "@/types/type";
+import { Product } from "@/types";
 
 interface ProductGridProps {
-  products: IProduct[];
+  products: Product[];
   isLoading: boolean;
+  t: any;
 }
 
-export default function ProductGrid({ products, isLoading }: ProductGridProps) {
+export default function ProductGrid({
+  products,
+  isLoading,
+  t,
+}: ProductGridProps) {
   // إذا كان التحميل جاريًا، اعرض مجموعة من الهياكل العظمية
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-8">
-        {Array(8).fill(0).map((_, index) => (
-          <ProductCardSkeleton key={index} />
-        ))}
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-8">
+        {Array(8)
+          .fill(0)
+          .map((_, index) => (
+            <ProductCardSkeleton key={index} />
+          ))}
       </div>
     );
   }
@@ -32,9 +39,9 @@ export default function ProductGrid({ products, isLoading }: ProductGridProps) {
 
   // اعرض المنتجات
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-8">
+    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-8">
       {products.map((product) => (
-        <ProductCard key={product._id} product={product} />
+        <ProductCard key={product._id} product={product} t={t} />
       ))}
     </div>
   );

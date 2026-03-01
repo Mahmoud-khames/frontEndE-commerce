@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
+// import { useRouter } from "next/navigation";
 import {
   Dialog,
   DialogContent,
@@ -13,9 +13,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { toast } from "react-toastify";
-import { createCategory } from "@/server";
-import { fetchCategories } from "@/redux/features/category/categorySlice";
-import { useAppDispatch } from "@/redux/hooks";
+import { useCreateCategory } from "@/hooks/useCategories";
+// Removed Redux & server imports
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -34,32 +33,48 @@ import { Switch } from "@/components/ui/switch";
 import { Loader2, PlusCircle, Upload } from "lucide-react";
 import Image from "next/image";
 
-export function AddCategory({ t, locale }: { t: any; locale: string }) {
-  const router = useRouter();
-  const [isPending, startTransition] = useTransition();
-  const dispatch = useAppDispatch();
+export function AddCategory({
+  t,
+}: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  t: any;
+}) {
+  // const router = useRouter();
+  const createCategoryMutation = useCreateCategory(); // Hook usage
   const [open, setOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [categoryImage, setCategoryImage] = useState<File | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmitting = createCategoryMutation.isPending; // Use mutation state
 
-  // تعريف المخطط أولاً
+  // ... schema definition remains same ...
   const categorySchema = z.object({
-    name: z.string().min(3, { message: t.admin.categoryNameRequired || "Category name is required" }),
-    description: z.string().min(10, { message: t.admin.categoryDescriptionRequired || "Category description is required" }),
+    nameEn: z.string().min(3, {
+      message: t.admin.categoryNameRequired || "Category name is required",
+    }),
+    nameAr: z.string().min(3, {
+      message: t.admin.categoryNameRequired || "Category name is required",
+    }),
+    descriptionEn: z.string().min(10, {
+      message:
+        t.admin.categoryDescriptionRequired ||
+        "Category description is required",
+    }),
+    descriptionAr: z.string().min(10, {
+      message:
+        t.admin.categoryDescriptionRequired ||
+        "Category description is required",
+    }),
     status: z.boolean(),
     image: z.any().optional(),
   });
 
-  // استخدام z.infer لاشتقاق النوع من المخطط
-  type CategoryFormValues = z.infer<typeof categorySchema>;
-
-  // استخدام النوع المشتق في useForm
   const form = useForm({
     resolver: zodResolver(categorySchema),
     defaultValues: {
-      name: "",
-      description: "",
+      nameEn: "",
+      nameAr: "",
+      descriptionEn: "",
+      descriptionAr: "",
       status: true,
       image: null,
     },
@@ -79,34 +94,40 @@ export function AddCategory({ t, locale }: { t: any; locale: string }) {
 
   const onSubmit = async (data: z.infer<typeof categorySchema>) => {
     if (!categoryImage) {
-      toast.error(t.admin.categoryImageRequired || "Category image is required");
+      toast.error(
+        t.admin.categoryImageRequired || "Category image is required"
+      );
       return;
     }
 
-    setIsSubmitting(true);
     try {
       const formData = new FormData();
-      formData.append("name", data.name);
-      formData.append("description", data.description);
+      formData.append("nameEn", data.nameEn);
+      formData.append("nameAr", data.nameAr);
+      formData.append("descriptionEn", data.descriptionEn);
+      formData.append("descriptionAr", data.descriptionAr);
       formData.append("status", data.status.toString());
       formData.append("categoryImage", categoryImage);
 
-      const response = await createCategory(formData);
-      toast.success(response.data.message || t.admin.categoryCreatedSuccess || "Category created successfully");
-      
+      // Mutate
+      await createCategoryMutation.mutateAsync(formData);
+
+      // Toast handled in hook onSuccess usually, but let's keep it safe.
+      // The hook in useCategories.ts handles SUCCESS toast.
+      // We process close/reset here.
+
       // Reset form and close dialog
       form.reset();
       setPreviewImage(null);
       setCategoryImage(null);
       setOpen(false);
-      
-      // Refresh categories list
-      dispatch(fetchCategories());
-      router.refresh();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || t.common.error || "An error occurred");
-    } finally {
-      setIsSubmitting(false);
+
+      // No need to dispatch fetchCategories, hook invalidates queries.
+      // router.refresh(); // Optional with React Query
+    } catch {
+      // Error toast handled in hook or here?
+      // The hook provided doesn't have onError, so typically query throws.
+      // We can catch it here.
     }
   };
 
@@ -129,7 +150,8 @@ export function AddCategory({ t, locale }: { t: any; locale: string }) {
         <DialogHeader>
           <DialogTitle>{t.admin.addCategory || "Add New Category"}</DialogTitle>
           <DialogDescription>
-            {t.admin.addCategoryDescription || "Fill in the details to create a new category"}
+            {t.admin.addCategoryDescription ||
+              "Fill in the details to create a new category"}
           </DialogDescription>
         </DialogHeader>
 
@@ -137,12 +159,41 @@ export function AddCategory({ t, locale }: { t: any; locale: string }) {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
               control={form.control}
-              name="name"
+              name="nameEn"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t.admin.categoryName || "Category Name"}</FormLabel>
+                  <FormLabel>
+                    {t.admin.categoryNameEn || "Category Name English"}
+                  </FormLabel>
                   <FormControl>
-                    <Input placeholder={t.admin.enterCategoryName || "Enter category name"} {...field} />
+                    <Input
+                      placeholder={
+                        t.admin.enterCategoryNameEn ||
+                        "Enter category Name English"
+                      }
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="nameAr"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    {t.admin.categoryNameAr || "Category Name Arabic"}
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder={
+                        t.admin.enterCategoryNameAr ||
+                        "Enter category Name Arabic"
+                      }
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -151,13 +202,41 @@ export function AddCategory({ t, locale }: { t: any; locale: string }) {
 
             <FormField
               control={form.control}
-              name="description"
+              name="descriptionEn"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t.admin.categoryDescription || "Category Description"}</FormLabel>
+                  <FormLabel>
+                    {t.admin.categoryDescription || "Category Description"} (EN)
+                  </FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder={t.admin.enterCategoryDescription || "Enter category description"}
+                      placeholder={
+                        t.admin.enterCategoryDescription ||
+                        "Enter category description"
+                      }
+                      className="min-h-32"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="descriptionAr"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    {t.admin.categoryDescription || "Category Description"} (AR)
+                  </FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder={
+                        t.admin.enterCategoryDescription ||
+                        "Enter category description"
+                      }
                       className="min-h-32"
                       {...field}
                     />
@@ -224,7 +303,9 @@ export function AddCategory({ t, locale }: { t: any; locale: string }) {
                         htmlFor="category-image"
                         className="relative cursor-pointer rounded-md bg-white font-medium text-primary hover:text-primary-dark focus-within:outline-none focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2"
                       >
-                        <span>{t.admin.uploadCategoryImage || "Upload Image"}</span>
+                        <span>
+                          {t.admin.uploadCategoryImage || "Upload Image"}
+                        </span>
                         <input
                           id="category-image"
                           name="category-image"

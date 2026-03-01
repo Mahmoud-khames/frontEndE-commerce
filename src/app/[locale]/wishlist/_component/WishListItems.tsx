@@ -1,25 +1,36 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import React from "react";
-import { useAppSelector } from "@/redux/hooks";
-import { selectWishlistItems, selectWishlistLoading } from "@/redux/features/wishList/wishlistSlice";
+import { useWishlist } from "@/hooks";
 import ProductCard from "@/components/ProductCard";
 import Link from "@/components/link";
+import { Loader2 } from "lucide-react";
 
-export default function WishListItems({ translations, locale }: { translations: any; locale: string }) {
-  const wishlist = useAppSelector(selectWishlistItems);
-  const loading = useAppSelector(selectWishlistLoading);
+export default function WishListItems({
+  translations,
+  locale,
+}: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  translations: any;
+  locale: string;
+}) {
+  const { data: wishlistData, isLoading } = useWishlist();
+  const wishlist = wishlistData?.data?.wishlist || [];
   const isRTL = locale === "ar";
-  if (loading) {
+
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div>
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
   }
+
   return (
-    <div className="flex flex-col gap-4 items-center justify-center" dir={isRTL ? "rtl" : "ltr"}>
+    <div
+      className="flex flex-col gap-4 items-center justify-center"
+      dir={isRTL ? "rtl" : "ltr"}
+    >
       {wishlist.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 justify-items-center">
           {wishlist.map((item) => (
@@ -29,7 +40,9 @@ export default function WishListItems({ translations, locale }: { translations: 
       ) : (
         <div className="text-muted-foreground grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 justify-items-center w-full text-center">
           <div className="flex flex-col items-center justify-center">
-            <h4 className="text-2xl font-bold">{translations.wishlist.empty}</h4>
+            <h4 className="text-2xl font-bold">
+              {translations.wishlist.empty}
+            </h4>
             <div className="my-10 flex flex-col md:flex-row justify-end gap-2 group w-fit">
               <Link
                 href={`/${locale}/products`}

@@ -1,21 +1,26 @@
-
-
+// app/[locale]/admin/customize/page.tsx
+import { Metadata } from "next";
 import getTrans from "@/lib/translation";
-
-import { CustomizeManager } from "./_components/CustomizeManager";
 import { Locale } from "@/i18n.config";
-export default async function CustomizePage({
-  params,
-}: {
-  params: { locale: Locale };
-}) {
-  const locale = params.locale;
+import CustomizeManager from "./_components/CustomizeManager";
+
+export const metadata: Metadata = {
+  title: "Customize Hero Slides | Admin Dashboard",
+  description: "Manage homepage hero slides and banners",
+};
+
+interface CustomizePageProps {
+  params: {
+    locale: Locale;
+  };
+}
+
+export default async function CustomizePage({ params }: CustomizePageProps) {
+  const { locale } = params;
   const { t } = await getTrans(locale);
+
   return (
-    <div className="container mx-auto py-6">
-      <h1 className="text-2xl font-bold mb-6">
-        {t.admin?.customizeSettings || "Customize Settings"}
-      </h1>
+    <div className="container mx-auto py-6 px-4">
       <CustomizeManager t={t} locale={locale} />
     </div>
   );

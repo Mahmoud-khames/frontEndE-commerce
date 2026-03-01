@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import FormFields from '@/components/form-fields/form-fields';
-import { Button } from '@/components/ui/button';
-import { Pages, Routes } from '@/constants/enums';
-import useFormFields from '../../../../../hooks/useFormFields';
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { Loader2 } from 'lucide-react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import FormFields from "@/components/form-fields/form-fields";
+import { Button } from "@/components/ui/button";
+import { Pages, Routes } from "@/constants/enums";
+import useFormFields from "@/hooks/useFormFields"; // Fixed import path from ../../../../../hooks...
+import React, { useState, useEffect } from "react"; // React hooks
+import { Loader2 } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useResetPassword } from "@/hooks/useAuth";
 
 interface FormProps {
   locale: string;
@@ -15,18 +15,19 @@ interface FormProps {
 }
 
 export default function Form({ locale, t }: FormProps) {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [token, setToken] = useState('');
+  const resetPasswordMutation = useResetPassword();
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [token, setToken] = useState("");
 
-  const router = useRouter();
+  // remove router if not used directly (hook navigates), but hook might need router.
+  // The hook useResetPassword navigates to /login on success.
+
   const searchParams = useSearchParams();
 
-    
-    // Get token from URL
+  // Get token from URL
   useEffect(() => {
-    const tokenFromUrl = searchParams.get('token');
+    const tokenFromUrl = searchParams.get("token");
     if (tokenFromUrl) {
       setToken(tokenFromUrl);
     }
@@ -37,41 +38,35 @@ export default function Form({ locale, t }: FormProps) {
     t,
   });
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsLoading(true);
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
 
     const formData = new FormData(e.currentTarget);
-    const password = formData.get('password') as string;
+    const password = formData.get("password") as string;
 
     if (!token) {
-      setError('Reset token is missing');
-      setIsLoading(false);
+      setError("Reset token is missing");
       return;
     }
 
-    try {
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/reset-password`, { 
-        token, 
-        password 
-      });
-      
-      if (response.data.success) {
-        setSuccess(response.data.message);
-        // Redirect to login page after 2 seconds
-        setTimeout(() => {
-          router.push(`/${locale}/${Routes.LOGIN}`);
-        }, 2000);
-      } else {
-        setError(response.data.error || 'Failed to reset password');
+    resetPasswordMutation.mutate(
+      { token, password },
+      {
+        onSuccess: (data: any) => {
+          setSuccess("Password reset successful! Redirecting to login...");
+          // Hook navigates after toast.
+        },
+        onError: (err: any) => {
+          setError(
+            err.response?.data?.error ||
+              err.message ||
+              "Failed to reset password"
+          );
+        },
       }
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Something went wrong');
-    } finally {
-      setIsLoading(false);
-    }
+    );
   };
 
   if (!t.auth) {
@@ -82,20 +77,24 @@ export default function Form({ locale, t }: FormProps) {
     <div className="flex flex-col items-center justify-center gap-6 w-full">
       {error && <div className="text-red-500 w-full">{error}</div>}
       {success && <div className="text-green-500 w-full">{success}</div>}
-      
+
       <form onSubmit={handleSubmit} className="space-y-6 w-full">
         {getFormFields().map((field) => (
           <div key={field.name}>
-            <FormFields {...field} />
+            <FormFields {...field} error={undefined} />
           </div>
         ))}
-        
-        <Button 
+
+        <Button
           type="submit"
-          disabled={isLoading}
+          disabled={resetPasswordMutation.isPending}
           className="w-full bg-secondary cursor-pointer text-white py-3 px-10 rounded-md shadow-md hover:bg-red-700 transition-all duration-300"
         >
-          {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : t.auth.resetPassword || 'Reset Password'}
+          {resetPasswordMutation.isPending ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            t.auth.resetPassword || "Reset Password"
+          )}
         </Button>
       </form>
     </div>

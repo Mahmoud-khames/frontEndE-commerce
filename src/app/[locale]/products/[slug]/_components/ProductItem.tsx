@@ -9,7 +9,7 @@ import Link from "@/components/link";
 import AddToWishlist from "@/components/Wishlist/AddToWishList";
 import AddToCart from "@/components/Cart/addToCart";
 
-import { IProduct } from "@/types/type";
+import { Product } from "@/types";
 import { getProduct } from "@/server";
 
 // Custom skeleton component
@@ -18,34 +18,36 @@ const CustomSkeleton = ({ className }: { className: string }) => (
 );
 
 export default function ProductItem({ slug }: { slug: string }) {
-  const [product, setProduct] = useState<IProduct | null>(null);
+  const [product, setProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  
+
   const fetchProduct = React.useCallback(() => {
     return getProduct(slug);
   }, [slug]);
 
   useEffect(() => {
     setIsLoading(true);
-    fetchProduct().then((data) => {
-      setProduct(data.data.data);
-      setIsLoading(false);
-    }).catch(error => {
-      console.error("Error fetching product:", error);
-      setIsLoading(false);
-    });
+    fetchProduct()
+      .then((data) => {
+        setProduct(data.data.data);
+        setIsLoading(false);
+      })
+      .catch((error) => {
+        console.error("Error fetching product:", error);
+        setIsLoading(false);
+      });
   }, [fetchProduct]);
 
   // State for selected color, size, and quantity
   const [selectedColor, setSelectedColor] = useState<string | null>(
-    product?.productColors && product.productColors.length > 0 
-      ? product.productColors[0] 
+    product?.productColors && product.productColors.length > 0
+      ? product.productColors[0]
       : null
   );
   const [selectedSize, setSelectedSize] = useState<string | null>(
-    product?.productSizes && product.productSizes.length > 0 
-      ? product.productSizes[0] 
+    product?.productSizes && product.productSizes.length > 0
+      ? product.productSizes[0]
       : null
   );
   const [quantity, setQuantity] = useState<number>(1);
@@ -54,7 +56,7 @@ export default function ProductItem({ slug }: { slug: string }) {
   const handleQuantityChange = (change: number) => {
     setQuantity((prev) => Math.max(1, prev + change));
   };
-  
+
   if (isLoading) {
     return (
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 lg:py-8">
@@ -63,7 +65,7 @@ export default function ProductItem({ slug }: { slug: string }) {
           <div className="w-full md:w-1/2">
             <CustomSkeleton className="w-full aspect-square rounded-md" />
           </div>
-          
+
           {/* Product details skeleton */}
           <div className="w-full md:w-1/2 space-y-4">
             <CustomSkeleton className="h-8 w-3/4" />
@@ -75,7 +77,7 @@ export default function ProductItem({ slug }: { slug: string }) {
       </div>
     );
   }
-  
+
   // If product is not found, show a fallback
   if (!product) {
     return (
@@ -84,26 +86,30 @@ export default function ProductItem({ slug }: { slug: string }) {
       </div>
     );
   }
-  
+
   const apiURL = process.env.NEXT_PUBLIC_API_URL;
 
   // إضافة وظيفة للتعامل مع عناوين URL للصور
   const getImageUrl = (imagePath: string) => {
     if (!imagePath) {
-      return '/placeholder-product.jpg';
+      return "/placeholder-product.jpg";
     }
-    
+
     // تحقق مما إذا كانت الصورة من Cloudinary
-    if (imagePath.includes('cloudinary.com')) {
+    if (imagePath.includes("cloudinary.com")) {
       return imagePath; // استخدم عنوان URL كاملاً إذا كان من Cloudinary
     }
-    
+
     // تأكد من أن apiURL موجود وأنه ينتهي بـ "/"
-    const baseUrl = apiURL ? (apiURL.endsWith('/') ? apiURL : `${apiURL}/`) : '/';
-    
+    const baseUrl = apiURL
+      ? apiURL.endsWith("/")
+        ? apiURL
+        : `${apiURL}/`
+      : "/";
+
     // تأكد من أن مسار الصورة لا يبدأ بـ "/"
-    const path = imagePath.startsWith('/') ? imagePath.substring(1) : imagePath;
-      
+    const path = imagePath.startsWith("/") ? imagePath.substring(1) : imagePath;
+
     return `${baseUrl}${path}`;
   };
 
@@ -186,7 +192,9 @@ export default function ProductItem({ slug }: { slug: string }) {
               <span className="text-gray-500 text-xs sm:text-sm">
                 ({product.productReviews?.length || 0} Reviews)
               </span>
-              <span className="text-green-600 text-xs sm:text-sm">In Stock</span>
+              <span className="text-green-600 text-xs sm:text-sm">
+                In Stock
+              </span>
             </div>
 
             {/* Price */}
@@ -211,7 +219,9 @@ export default function ProductItem({ slug }: { slug: string }) {
                     <button
                       key={index}
                       className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 cursor-pointer ${
-                        selectedColor === color ? "border-black" : "border-gray-300"
+                        selectedColor === color
+                          ? "border-black"
+                          : "border-gray-300"
                       }`}
                       style={{ backgroundColor: color.toLowerCase() }}
                       onClick={() => setSelectedColor(color)}
@@ -277,14 +287,19 @@ export default function ProductItem({ slug }: { slug: string }) {
                   product={{
                     ...product,
                     oldProductPrice: Number(product.oldProductPrice) || 0,
-                    productDiscountPrice: Number(product.productDiscountPrice) || 0,
+                    productDiscountPrice:
+                      Number(product.productDiscountPrice) || 0,
                   }}
                   quantity={quantity}
                   selectedSize={selectedSize}
                   selectedColor={selectedColor}
                   disabled={
-                    (product.productSizes && product.productSizes.length > 0 && !selectedSize) ||
-                    (product.productColors && product.productColors.length > 0 && !selectedColor)
+                    (product.productSizes &&
+                      product.productSizes.length > 0 &&
+                      !selectedSize) ||
+                    (product.productColors &&
+                      product.productColors.length > 0 &&
+                      !selectedColor)
                   }
                 />
               </div>

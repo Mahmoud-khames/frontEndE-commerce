@@ -106,10 +106,9 @@ export const createOrder = (data: {
 export const getOrders = () => api.get("/api/order");
 export const getUserOrders = () => api.get("/api/order/user");
 export const getOrderById = (id: string) => api.get(`/api/order/${id}`);
-export const updateOrderStatus = (id: string, status: string) => 
+export const updateOrderStatus = (id: string, status: string) =>
   api.put(`/api/order/${id}`, { status });
 export const deleteOrder = (id: string) => api.delete(`/api/order/${id}`);
-
 
 // Review endpoints
 export const createReview = (data: {
@@ -169,9 +168,21 @@ export const deleteUser = (uId: string) => api.delete(`/api/user/${uId}`);
 
 // Customize endpoints
 export const getCustomizeImages = () => api.get("/api/customize");
+export const createCustomize = async (data: FormData) => {
+  try {
+    const response = await api.post("/api/customize", data, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};
 export const uploadSlideImage = async (data: FormData) => {
   try {
-    const response = await api.post("/api/customize/uploadSlideImage", data, {
+    const response = await api.post("/api/customize/image/add", data, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
@@ -195,6 +206,8 @@ export const updateCustomize = async (data: FormData, id: string) => {
     throw error;
   }
 };
+export const deleteCustomize = (id: string) =>
+  api.delete(`/api/customize/${id}`);
 
 // Dashboard stats endpoints
 export const getProductsCount = () => api.get("/api/product/dashboard/count");
@@ -206,18 +219,55 @@ export const getAllCoupons = () => api.get("/api/coupon");
 export const getCouponById = (id: string) => api.get(`/api/coupon/${id}`);
 export const createCoupon = (data: {
   code: string;
-  discount: number;
-  expiry: Date;
-  status: boolean;
-  maxUses: number;
+  nameEn: string;
+  nameAr: string;
+  descriptionEn?: string;
+  descriptionAr?: string;
+  discountType: "percentage" | "fixed";
+  discountValue: number;
+  minPurchaseAmount?: number;
+  maxDiscountAmount?: number | null;
+  startDate: Date;
+  endDate: Date;
+  isActive?: boolean;
+  usageLimit?: number | null;
+  usageLimitPerUser?: number;
+  allowedUsers?: string[];
+  allowedCategories?: string[];
+  allowedProducts?: string[];
+  excludedProducts?: string[];
+  allowedPaymentMethods?: string[];
+  type?: "public" | "private" | "first_order" | "birthday";
+  applyToShipping?: boolean;
+  stackable?: boolean;
 }) => api.post("/api/coupon", data);
-export const updateCoupon = (id: string, data: {
-  code?: string;
-  discount?: number;
-  expiry?: Date;
-  status?: boolean;
-  maxUses?: number;
-}) => api.put(`/api/coupon/${id}`, data);
+export const updateCoupon = (
+  id: string,
+  data: {
+    code?: string;
+    nameEn?: string;
+    nameAr?: string;
+    descriptionEn?: string;
+    descriptionAr?: string;
+    discountType?: "percentage" | "fixed";
+    discountValue?: number;
+    minPurchaseAmount?: number;
+    maxDiscountAmount?: number | null;
+    startDate?: Date;
+    endDate?: Date;
+    isActive?: boolean;
+    usageLimit?: number | null;
+    usageLimitPerUser?: number;
+    allowedUsers?: string[];
+    allowedCategories?: string[];
+    allowedProducts?: string[];
+    excludedProducts?: string[];
+    allowedPaymentMethods?: string[];
+    type?: "public" | "private" | "first_order" | "birthday";
+    applyToShipping?: boolean;
+    stackable?: boolean;
+  }
+) => api.put(`/api/coupon/${id}`, data);
 export const deleteCoupon = (id: string) => api.delete(`/api/coupon/${id}`);
 
 // إضافة معترض للتعامل مع أخطاء الشبكة بشكل أفضل

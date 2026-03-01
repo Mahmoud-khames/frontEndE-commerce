@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
+// import { useRouter } from "next/navigation";
 import {
   Dialog,
   DialogContent,
@@ -13,10 +13,9 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { toast } from "react-toastify";
-import { fetchCategories } from "@/redux/features/category/categorySlice";
-import { useAppDispatch } from "@/redux/hooks";
+import { useUpdateCategory } from "@/hooks/useCategories";
+// Removed Redux & server imports
 import Image from "next/image";
-import { updateCategory } from "@/server";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -36,44 +35,45 @@ import { Edit, Loader2, Upload } from "lucide-react";
 
 export default function EditCategory({
   t,
-  locale,
   category,
 }: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   t: any;
-  locale: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   category: any;
 }) {
-  const router = useRouter();
-  const [isPending, startTransition] = useTransition();
-  const dispatch = useAppDispatch();
+  // const router = useRouter(); // Removed unused router
+  const updateCategoryMutation = useUpdateCategory();
   const [open, setOpen] = useState(false);
-  const apiURL = process.env.NEXT_PUBLIC_API_URL;
-  
+
   const [previewImage, setPreviewImage] = useState<string | null>(
     category.image ? `${category.image}` : null
   );
   const [categoryImage, setCategoryImage] = useState<File | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmitting = updateCategoryMutation.isPending;
 
   const categorySchema = z.object({
-    name: z.string().min(3, { message: t.admin.minCategoryNameLength }),
-    description: z.string().min(10, { message: t.admin.minCategoryDescriptionLength }),
+    nameEn: z.string().min(3, { message: t.admin.minCategoryNameLength }),
+    nameAr: z.string().min(3, { message: t.admin.minCategoryNameLength }),
+    descriptionEn: z
+      .string()
+      .min(10, { message: t.admin.minCategoryDescriptionLength }),
+    descriptionAr: z
+      .string()
+      .min(10, { message: t.admin.minCategoryDescriptionLength }),
     status: z.boolean(),
     image: z.any().optional(),
   });
 
-  type CategoryFormValues = {
-    name: string;
-    description: string;
-    status: boolean;
-    image?: File | null;
-  };
+  type CategoryFormValues = z.infer<typeof categorySchema>;
 
   const form = useForm<CategoryFormValues>({
     resolver: zodResolver(categorySchema),
     defaultValues: {
-      name: category.name,
-      description: category.description,
+      nameEn: category.nameEn || "",
+      nameAr: category.nameAr || "",
+      descriptionEn: category.descriptionEn || category.description || "",
+      descriptionAr: category.descriptionAr || category.description || "",
       status: category.status,
       image: null,
     },
@@ -92,28 +92,31 @@ export default function EditCategory({
   };
 
   const onSubmit = async (data: z.infer<typeof categorySchema>) => {
-    setIsSubmitting(true);
     try {
       const formData = new FormData();
-      formData.append("name", data.name);
-      formData.append("description", data.description);
+      formData.append("nameEn", data.nameEn);
+      formData.append("nameAr", data.nameAr);
+      formData.append("descriptionEn", data.descriptionEn);
+      formData.append("descriptionAr", data.descriptionAr);
       formData.append("status", data.status.toString());
-      
+
       if (categoryImage) {
         formData.append("categoryImage", categoryImage);
       }
 
-      await updateCategory(formData, category._id);
-      toast.success(t.admin.categoryUpdatedSuccessfully);
-      
+      await updateCategoryMutation.mutateAsync({
+        id: category._id,
+        formData: formData,
+      });
+
+      // useUpdateCategory handles success toast and invalidation logic
+
       // Close dialog and refresh categories
       setOpen(false);
-      dispatch(fetchCategories());
-      router.refresh();
-    } catch (error: any) {
-      toast.error(error.message || t.common.error);
-    } finally {
-      setIsSubmitting(false);
+      // router.refresh(); // Optional
+    } catch {
+      // Error handled generally or add toast here if mutation doesn't
+      toast.error(t.common.error);
     }
   };
 
@@ -127,21 +130,38 @@ export default function EditCategory({
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{t.admin.editCategory}</DialogTitle>
-          <DialogDescription>
-            {t.admin.updateCategoryDetails}
-          </DialogDescription>
+          <DialogDescription>{t.admin.updateCategoryDetails}</DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
               control={form.control}
-              name="name"
+              name="nameEn"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t.admin.categoryName}</FormLabel>
+                  <FormLabel>{t.admin.categoryNameEn}</FormLabel>
                   <FormControl>
-                    <Input placeholder={t.admin.enterCategoryName} {...field} />
+                    <Input
+                      placeholder={t.admin.enterCategoryNameEn}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="nameAr"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t.admin.categoryNameAr}</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder={t.admin.enterCategoryNameAr}
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -150,10 +170,28 @@ export default function EditCategory({
 
             <FormField
               control={form.control}
-              name="description"
+              name="descriptionEn"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t.admin.categoryDescription}</FormLabel>
+                  <FormLabel>{t.admin.categoryDescription} (EN)</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder={t.admin.enterCategoryDescription}
+                      className="min-h-32"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="descriptionAr"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t.admin.categoryDescription} (AR)</FormLabel>
                   <FormControl>
                     <Textarea
                       placeholder={t.admin.enterCategoryDescription}
@@ -188,7 +226,7 @@ export default function EditCategory({
             <FormField
               control={form.control}
               name="image"
-              render={({ field }) => (
+              render={() => (
                 <FormItem>
                   <FormLabel>{t.admin.categoryImage}</FormLabel>
                   <FormControl>
@@ -218,7 +256,10 @@ export default function EditCategory({
                         variant="outline"
                         type="button"
                         onClick={() => {
-                          const input = document.querySelector<HTMLInputElement>('input[type="file"]');
+                          const input =
+                            document.querySelector<HTMLInputElement>(
+                              'input[type="file"]'
+                            );
                           input?.click();
                         }}
                       >

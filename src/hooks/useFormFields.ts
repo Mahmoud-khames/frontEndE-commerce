@@ -1,9 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Pages } from "@/constants/enums";
 import { IFormField } from "@/types/app";
-import { useAppSelector } from "@/redux/hooks";
-  const useFormFields = ({ slug, t }: { slug: string; t: any }) => {
-    const {user} = useAppSelector((state) => state.user)
+import { useAuth } from "@/providers";
+
+const useFormFields = ({ slug, t }: { slug: string; t: any }) => {
+  const { user } = useAuth();
+
   const loginFields = (): IFormField[] => [
     {
       name: "email",
@@ -85,7 +87,7 @@ import { useAppSelector } from "@/redux/hooks";
       type: "text",
       placeholder: t.formFields.firstNamePlaceholder,
       label: t.formFields.firstNameLabel,
-      defaultValue: user?.firstName, // قيمة افتراضية (يمكن استبدالها ببيانات من API)
+      defaultValue: user?.firstName,
     },
     {
       name: "lastName",

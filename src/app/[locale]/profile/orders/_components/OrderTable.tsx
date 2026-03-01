@@ -1,22 +1,22 @@
+// src/app/[locale]/profile/orders/_components/OrderTable.tsx
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import { getUserOrders, deleteOrder, updateOrderStatus } from '@/server';
-import { useAppSelector } from '@/redux/hooks';
-
-import { useRouter } from 'next/navigation';
-import { toast } from 'react-toastify';
-import Link from '@/components/link';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { 
+import { useState } from "react";
+import { useUserOrders, useCancelOrder } from "@/hooks/useOrders";
+import Link from "@/components/link";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -25,170 +25,264 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { formatDate } from '@/lib/utils';
-import OrderDetails from './OrderDetails';
-import { Loader2 } from 'lucide-react';
+import { formatCurrency } from "@/lib/formatters";
+import OrderDetails from "./OrderDetails";
+import { 
+  Loader2, 
+  Package, 
+  ShoppingBag, 
+  Eye, 
+  XCircle,
+  Calendar,
+  DollarSign
+} from "lucide-react";
+import { format } from "date-fns";
 
-export default function OrderTable() {
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedOrder, setSelectedOrder] = useState(null);
-  const { user } = useAppSelector((state) => state.user);
-  const router = useRouter();
+interface OrderTableProps {
+  t: any;
+  locale: string;
+}
 
-  useEffect(() => {
-    if (!user) {
-      router.push('/auth/signin');
-      return;
-    }
+export default function OrderTable({ t, locale }: OrderTableProps) {
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [orderToCancel, setOrderToCancel] = useState<string | null>(null);
+  
+  const { data: ordersData, isLoading } = useUserOrders();
+  const cancelOrderMutation = useCancelOrder();
+
+  const isRTL = locale === "ar";
+  const orders = ordersData?.data || [];
+
+  const handleCancelOrder = async () => {
+    if (!orderToCancel) return;
     
-    fetchOrders();
-  }, [user, router]);
-
-  const fetchOrders = async () => {
-    try {
-      setLoading(true);
-      const response = await getUserOrders();
-      if (response.data.success) {
-        setOrders(response.data.data);
+    cancelOrderMutation.mutate(
+      { id: orderToCancel, reason: isRTL ? "إلغاء من قبل المستخدم" : "Cancelled by user" },
+      {
+        onSuccess: () => {
+          setOrderToCancel(null);
+        },
       }
-    } catch (error) {
-      console.error('Error fetching orders:', error);
-      toast.error('Failed to load orders');
-    } finally {
-      setLoading(false);
-    }
+    );
   };
 
-  const handleCancelOrder = async (orderId) => {
+  const getStatusInfo = (status: string) => {
+    const statusMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+      pending: {
+        label: isRTL ? "قيد الانتظار" : "Pending",
+        variant: "secondary",
+      },
+      confirmed: {
+        label: isRTL ? "مؤكد" : "Confirmed",
+        variant: "default",
+      },
+      processing: {
+        label: isRTL ? "قيد المعالجة" : "Processing",
+        variant: "default",
+      },
+      shipped: {
+        label: isRTL ? "تم الشحن" : "Shipped",
+        variant: "default",
+      },
+      delivered: {
+        label: isRTL ? "تم التوصيل" : "Delivered",
+        variant: "default",
+      },
+      cancelled: {
+        label: isRTL ? "ملغي" : "Cancelled",
+        variant: "destructive",
+      },
+    };
+
+    return statusMap[status.toLowerCase()] || { label: status, variant: "outline" as const };
+  };
+
+  const canCancelOrder = (status: string) => {
+    return ["pending", "confirmed", "processing"].includes(status.toLowerCase());
+  };
+
+  const formatDate = (dateString: string) => {
     try {
-      const response = await updateOrderStatus(orderId, 'Cancelled');
-      if (response.data.success) {
-        toast.success('Order cancelled successfully');
-        fetchOrders(); // Refresh orders list
-      } else {
-        toast.error(response.data.message || 'Failed to cancel order');
-      }
-    } catch (error) {
-      console.error('Error cancelling order:', error);
-      toast.error('Failed to cancel order');
+      return format(new Date(dateString), "MMM dd, yyyy");
+    } catch {
+      return dateString;
     }
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'Pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'Processing':
-        return 'bg-blue-100 text-blue-800';
-      case 'Shipped':
-        return 'bg-purple-100 text-purple-800';
-      case 'Delivered':
-        return 'bg-green-100 text-green-800';
-      case 'Cancelled':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-6 w-32" />
+          <Skeleton className="h-4 w-48 mt-2" />
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-16 w-full" />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
-  const canCancelOrder = (status) => {
-    return ['Pending', 'Processing'].includes(status);
-  };
+  if (!orders || orders.length === 0) {
+    return (
+      <Card>
+        <CardContent className="pt-12 pb-12 text-center">
+          <Package className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-semibold mb-2">
+            {isRTL ? "لا توجد طلبات" : "No Orders Yet"}
+          </h3>
+          <p className="text-muted-foreground mb-6">
+            {isRTL ? "لم تقم بأي طلبات بعد. ابدأ التسوق الآن!" : "You haven't placed any orders yet. Start shopping now!"}
+          </p>
+          <Link href={`/${locale}/products`}>
+            <Button>
+              <ShoppingBag className="mr-2 h-4 w-4" />
+              {isRTL ? "ابدأ التسوق" : "Start Shopping"}
+            </Button>
+          </Link>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <div className="container mx-auto py-8">
-    <h1 className="text-2xl font-bold mb-6">My Orders</h1>
-    
-    {loading ? (
-      <div className="flex justify-center items-center py-10">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    ) : orders.length === 0 ? (
-      <div className="text-center py-10">
-        <p className="text-gray-500 mb-4">You don't have any orders yet</p>
-        <Button asChild>
-          <Link href="/products">Start Shopping</Link>
-        </Button>
-      </div>
-    ) : (
-      <div className="bg-white rounded-lg shadow overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Order ID</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Total</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {orders.map((order) => (
-              <TableRow key={order._id}>
-                <TableCell className="font-medium">
-                  {order._id.substring(0, 8)}...
-                </TableCell>
-                <TableCell>{formatDate(order.createdAt)}</TableCell>
-                <TableCell>${order.totalAmount.toFixed(2)}</TableCell>
-                <TableCell>
-                  <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(order.status)}`}>
-                    {order.status}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <div className="flex space-x-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => setSelectedOrder(order)}
-                    >
-                      View
-                    </Button>
-                    
-                    {canCancelOrder(order.status) && (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="destructive" size="sm">
-                            Cancel
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Package className="h-5 w-5" />
+            {isRTL ? "طلباتي" : "My Orders"}
+          </CardTitle>
+          <CardDescription>
+            {isRTL ? `لديك ${orders.length} طلب` : `You have ${orders.length} orders`}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{isRTL ? "رقم الطلب" : "Order ID"}</TableHead>
+                  <TableHead>
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-4 w-4" />
+                      {isRTL ? "التاريخ" : "Date"}
+                    </div>
+                  </TableHead>
+                  <TableHead>
+                    <div className="flex items-center gap-1">
+                      <DollarSign className="h-4 w-4" />
+                      {isRTL ? "المجموع" : "Total"}
+                    </div>
+                  </TableHead>
+                  <TableHead>{isRTL ? "الحالة" : "Status"}</TableHead>
+                  <TableHead className="text-center">{isRTL ? "الإجراءات" : "Actions"}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {orders.map((order: any) => {
+                  const statusInfo = getStatusInfo(order.status);
+                  
+                  return (
+                    <TableRow key={order._id}>
+                      <TableCell className="font-mono text-sm">
+                        #{order.orderNumber || order._id.substring(0, 8)}
+                      </TableCell>
+                      <TableCell>{formatDate(order.createdAt)}</TableCell>
+                      <TableCell className="font-semibold">
+                        {formatCurrency(order.totalAmount)}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={statusInfo.variant}>
+                          {statusInfo.label}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center justify-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setSelectedOrder(order)}
+                          >
+                            <Eye className="h-4 w-4 mr-1" />
+                            {isRTL ? "عرض" : "View"}
                           </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Cancel Order</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to cancel this order? This action cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>No, keep order</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleCancelOrder(order._id)}
-                            >
-                              Yes, cancel order
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    )}
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-    )}
 
-    {selectedOrder && (
-      <OrderDetails 
-        order={selectedOrder} 
-        onClose={() => setSelectedOrder(null)}
-        onCancel={canCancelOrder(selectedOrder.status) ? () => handleCancelOrder(selectedOrder._id) : null}
-      />
-    )}
-  </div>
-  )
+                          {canCancelOrder(order.status) && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => setOrderToCancel(order._id)}
+                            >
+                              <XCircle className="h-4 w-4 mr-1" />
+                              {isRTL ? "إلغاء" : "Cancel"}
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Order Details Dialog */}
+      {selectedOrder && (
+        <OrderDetails
+          order={selectedOrder}
+          onClose={() => setSelectedOrder(null)}
+          onCancel={
+            canCancelOrder(selectedOrder.status)
+              ? () => {
+                  setOrderToCancel(selectedOrder._id);
+                  setSelectedOrder(null);
+                }
+              : undefined
+          }
+          t={t}
+          locale={locale}
+        />
+      )}
+
+      {/* Cancel Confirmation Dialog */}
+      <AlertDialog open={!!orderToCancel} onOpenChange={() => setOrderToCancel(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {isRTL ? "تأكيد إلغاء الطلب" : "Confirm Order Cancellation"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {isRTL
+                ? "هل أنت متأكد من إلغاء هذا الطلب؟ لا يمكن التراجع عن هذا الإجراء."
+                : "Are you sure you want to cancel this order? This action cannot be undone."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={cancelOrderMutation.isPending}>
+              {isRTL ? "لا، احتفظ بالطلب" : "No, keep order"}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleCancelOrder}
+              disabled={cancelOrderMutation.isPending}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {cancelOrderMutation.isPending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              {isRTL ? "نعم، إلغاء الطلب" : "Yes, cancel order"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
 }

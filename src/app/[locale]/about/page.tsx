@@ -1,24 +1,29 @@
 import Image from "next/image";
 import { Metadata } from "next";
-import { getDictionary } from "@/lib/dictionary";
-
+import { getMessages } from "next-intl/server";
 
 import React from "react";
-import { Facebook, Twitter, Linkedin, ShoppingBag, DollarSign, Briefcase, HandCoins } from "lucide-react"; // أيقونات السوشيال ميديا
+import {
+  Facebook,
+  Twitter,
+  Linkedin,
+  ShoppingBag,
+  DollarSign,
+  Briefcase,
+  HandCoins,
+} from "lucide-react"; // أيقونات السوشيال ميديا
 import Link from "@/components/link";
 import getTrans from "@/lib/translation";
 import { Locale } from "@/i18n.config";
 
-
-
 export async function generateMetadata({
   params,
 }: {
-  params: { locale: Locale };
+  params: Promise<{ locale: Locale }>;
 }): Promise<Metadata> {
-  
-  const dictionary = await getDictionary(params.locale);
-  
+  const { locale } = await params;
+  const dictionary: any = await getMessages({ locale });
+
   return {
     title: dictionary.metadata.about.title,
     description: dictionary.metadata.about.description,
@@ -28,9 +33,9 @@ export async function generateMetadata({
 export default async function About({
   params,
 }: {
-  params: { locale: Locale };
+  params: Promise<{ locale: Locale }>;
 }) {
-  const { locale } = params; // ✅ إصلاح المشكلة هنا
+  const { locale } = await params;
   const { t } = await getTrans(locale);
   return (
     <div className="">
@@ -41,7 +46,10 @@ export default async function About({
             {t.navigation.home}
           </Link>
           <span>/</span>
-          <Link href={`/${locale}/about`} className="text-black hover:underline">
+          <Link
+            href={`/${locale}/about`}
+            className="text-black hover:underline"
+          >
             {t.navigation.about}
           </Link>
         </div>
@@ -52,11 +60,10 @@ export default async function About({
         <div className="flex flex-col lg:flex-row justify-between items-center gap-10">
           {/* content */}
           <div className="w-full lg:w-1/2 flex flex-col gap-6">
-              <h2 className="text-[54px] font-bold text-black">{t.about.ourStory}</h2>
-            <p className="text-gray-600">
-              {t.about.description}
-            </p>
-          
+            <h2 className="text-[54px] font-bold text-black">
+              {t.about.ourStory}
+            </h2>
+            <p className="text-gray-600">{t.about.description}</p>
           </div>
 
           {/* img */}
@@ -140,73 +147,75 @@ export default async function About({
               height={430}
               className="w-full h-[430px] object-cover rounded-md mb-4"
             />
-          <div className="flex flex-col items-start justify-start gap-2">
-          <h3 className="text-xl font-semibold text-black not-[]:text-black">Tom Cruise</h3>
-            <p className="text-gray-600">{t.about.founderChairman}</p>
-            <div className="flex justify-center space-x-4 mt-4">
-              <a href="#">
-                <Twitter className="w-6 h-6 text-gray-600 hover:text-black" />
-              </a>
-              <a href="#">
-                <Facebook className="w-6 h-6 text-gray-600 hover:text-black" />
-              </a>
-              <a href="#">
-                <Linkedin className="w-6 h-6 text-gray-600 hover:text-black" />
-              </a>
-          </div>
+            <div className="flex flex-col items-start justify-start gap-2">
+              <h3 className="text-xl font-semibold text-black not-[]:text-black">
+                Tom Cruise
+              </h3>
+              <p className="text-gray-600">{t.about.founderChairman}</p>
+              <div className="flex justify-center space-x-4 mt-4">
+                <a href="#">
+                  <Twitter className="w-6 h-6 text-gray-600 hover:text-black" />
+                </a>
+                <a href="#">
+                  <Facebook className="w-6 h-6 text-gray-600 hover:text-black" />
+                </a>
+                <a href="#">
+                  <Linkedin className="w-6 h-6 text-gray-600 hover:text-black" />
+                </a>
+              </div>
             </div>
           </div>
 
-            {/* Team Member 2 */}
-            <div className="bg-white rounded-md  text-center h-[574px] border-0">
-              <Image
+          {/* Team Member 2 */}
+          <div className="bg-white rounded-md  text-center h-[574px] border-0">
+            <Image
               src="/team2.png"
               alt="Emma Watson"
               width={370}
               height={430}
               className="w-full h-[430px] rounded-md mb-4"
             />
-            <div className="flex flex-col items-start justify-start gap-2"> 
-            <h3 className="text-xl font-semibold text-black">Emma Watson</h3>
+            <div className="flex flex-col items-start justify-start gap-2">
+              <h3 className="text-xl font-semibold text-black">Emma Watson</h3>
 
-            <p className="text-gray-600">{t.about.managingDirector}</p>
-            <div className="flex justify-center space-x-4 mt-4">
-              <a href="#">
-                <Twitter className="w-6 h-6 text-gray-600 hover:text-black" />
-              </a>
-              <a href="#">
-                <Facebook className="w-6 h-6 text-gray-600 hover:text-black" />
-              </a>
-              <a href="#">
-                <Linkedin className="w-6 h-6 text-gray-600 hover:text-black" />
-              </a>
+              <p className="text-gray-600">{t.about.managingDirector}</p>
+              <div className="flex justify-center space-x-4 mt-4">
+                <a href="#">
+                  <Twitter className="w-6 h-6 text-gray-600 hover:text-black" />
+                </a>
+                <a href="#">
+                  <Facebook className="w-6 h-6 text-gray-600 hover:text-black" />
+                </a>
+                <a href="#">
+                  <Linkedin className="w-6 h-6 text-gray-600 hover:text-black" />
+                </a>
+              </div>
             </div>
-            </div>
-            </div>
-            
+          </div>
+
           {/* Team Member 3 */}
-            <div className="bg-white rounded-md  text-center h-[574px] border-0">
+          <div className="bg-white rounded-md  text-center h-[574px] border-0">
             <Image
               src="/team3.png"
               alt="Will Smith"
               width={370}
               height={430}
               className="w-full h-[430px] object-cover rounded-md mb-4"
-              />
+            />
             <div className="flex flex-col items-start justify-start gap-2">
-            <h3 className="text-xl font-semibold text-black">Will Smith</h3>
-            <p className="text-gray-600">{t.about.productDesigner}</p>
-            <div className="flex justify-center space-x-4 mt-4">
-              <a href="#">
-                <Twitter className="w-6 h-6 text-gray-600 hover:text-black" />
-              </a>
-              <a href="#">
-                <Facebook className="w-6 h-6 text-gray-600 hover:text-black" />
-              </a>
-              <a href="#">
-                <Linkedin className="w-6 h-6 text-gray-600 hover:text-black" />
-              </a>
-            </div>
+              <h3 className="text-xl font-semibold text-black">Will Smith</h3>
+              <p className="text-gray-600">{t.about.productDesigner}</p>
+              <div className="flex justify-center space-x-4 mt-4">
+                <a href="#">
+                  <Twitter className="w-6 h-6 text-gray-600 hover:text-black" />
+                </a>
+                <a href="#">
+                  <Facebook className="w-6 h-6 text-gray-600 hover:text-black" />
+                </a>
+                <a href="#">
+                  <Linkedin className="w-6 h-6 text-gray-600 hover:text-black" />
+                </a>
+              </div>
             </div>
           </div>
         </div>

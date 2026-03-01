@@ -1,5 +1,4 @@
-
-import ProductsTable from "./_components/prodectTabel";
+import ProductsTable from "./_components/ProductTable";
 import getTrans from "@/lib/translation";
 import { Locale } from "@/i18n.config";
 
@@ -14,7 +13,6 @@ export default async function ProductsPage({
   return (
     <div className="">
       <ProductsTable t={t} locale={locale} />
-
     </div>
   );
 }

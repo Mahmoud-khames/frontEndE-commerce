@@ -1,93 +1,87 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
+// src/components/account/ProfileForm.tsx
 "use client";
+
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  FormDescription,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Loader2, User } from "lucide-react";
-import Image from "next/image";
-import { useAppDispatch, useAppSelector } from "@/redux/hooks";
-import { updateUserProfile } from "@/redux/features/user/userSlice";
-import { toast } from "react-toastify";
-import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Loader2, User, Upload, Lock, Mail, Phone, Edit } from "lucide-react";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
+import { useAuth } from "@/providers/AuthProvider";
+import { authService } from "@/services/authService";
 
-interface TranslationType {
-  formFields?: {
-    [key: string]: any;
-  };
-  admin?: {
-    userImage?: string;
-    userImagePreview?: string;
-  };
-  common?: {
-    loading?: string;
-    error?: string;
-    save?: string;
-  };
-  profile?: {
-    profileUpdated?: string;
-    personalInfo?: string;
-    accountSettings?: string;
-    uploadImage?: string;
-    changePassword?: string;
-    currentPassword?: string;
-    newPassword?: string;
-    confirmPassword?: string;
-    allPasswordFieldsRequired?: string;
-    passwordsDoNotMatch?: string;
-    passwordChangeError?: string;
-  };
-  navigation?: {
-    profile?: string;
-  };
-  [key: string]: any;
+interface ProfileFormProps {
+  t: any;
+  locale: string;
 }
 
-export default function ProfileForm({ t }: { t: TranslationType }) {
-  const user = useAppSelector((state) => state.user.user);
+export default function ProfileForm({ t, locale }: ProfileFormProps) {
+  const { user, updateUser } = useAuth();
   const [isPending, setIsPending] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const router = useRouter();
-  
-  const dispatch = useAppDispatch();
+  const isRTL = locale === "ar";
 
-  // Define form schema with Zod
-  const userSchema = z.object({
-    firstName: z.string().min(2, { message: t.admin?.minFirstNameLength || "First name must be at least 2 characters" }),
-    lastName: z.string().min(2, { message: t.admin?.minLastNameLength || "Last name must be at least 2 characters" }),
-    email: z.string().email({ message: t.admin?.invalidEmail || "Invalid email address" }),
-    phone: z.string().optional(),
-    userImage: z.any().optional(),
-    currentPassword: z.string().optional(),
-    newPassword: z.string().optional(),
-    confirmPassword: z.string().optional(),
-  }).refine(data => {
-    // If any password field is filled, all password fields must be filled
-    if (data.currentPassword || data.newPassword || data.confirmPassword) {
-      return !!data.currentPassword && !!data.newPassword && !!data.confirmPassword;
-    }
-    return true;
-  }, {
-    message: t.profile?.allPasswordFieldsRequired || "All password fields are required to change password",
-    path: ["confirmPassword"],
-  }).refine(data => {
-    // If new password is provided, it must match confirm password
-    if (data.newPassword && data.confirmPassword) {
-      return data.newPassword === data.confirmPassword;
-    }
-    return true;
-  }, {
-    message: t.profile?.passwordsDoNotMatch || "Passwords do not match",
-    path: ["confirmPassword"],
-  });
+  // Define form schema
+  const userSchema = z
+    .object({
+      firstName: z.string().min(2, {
+        message: isRTL ? "يجب أن يكون الاسم الأول حرفين على الأقل" : "First name must be at least 2 characters",
+      }),
+      lastName: z.string().min(2, {
+        message: isRTL ? "يجب أن يكون اسم العائلة حرفين على الأقل" : "Last name must be at least 2 characters",
+      }),
+      email: z.string().email({ 
+        message: isRTL ? "بريد إلكتروني غير صالح" : "Invalid email address" 
+      }),
+      phone: z.string().optional(),
+      userImage: z.any().optional(),
+      currentPassword: z.string().optional(),
+      newPassword: z.string().min(6, {
+        message: isRTL ? "كلمة المرور يجب أن تكون 6 أحرف على الأقل" : "Password must be at least 6 characters",
+      }).optional().or(z.literal("")),
+      confirmPassword: z.string().optional(),
+    })
+    .refine(
+      (data) => {
+        if (data.currentPassword || data.newPassword || data.confirmPassword) {
+          return !!data.currentPassword && !!data.newPassword && !!data.confirmPassword;
+        }
+        return true;
+      },
+      {
+        message: isRTL ? "جميع حقول كلمة المرور مطلوبة لتغيير كلمة المرور" : "All password fields are required to change password",
+        path: ["confirmPassword"],
+      }
+    )
+    .refine(
+      (data) => {
+        if (data.newPassword && data.confirmPassword) {
+          return data.newPassword === data.confirmPassword;
+        }
+        return true;
+      },
+      {
+        message: isRTL ? "كلمات المرور غير متطابقة" : "Passwords do not match",
+        path: ["confirmPassword"],
+      }
+    );
 
-  // Setup form with React Hook Form and Zod
   const form = useForm<z.infer<typeof userSchema>>({
     resolver: zodResolver(userSchema),
     defaultValues: {
@@ -95,162 +89,182 @@ export default function ProfileForm({ t }: { t: TranslationType }) {
       lastName: user?.lastName || "",
       email: user?.email || "",
       phone: user?.phone || "",
-
       currentPassword: "",
       newPassword: "",
       confirmPassword: "",
     },
   });
 
-  // Set preview image when component mounts
   useEffect(() => {
-    if (user?.userImage) {
-      setPreviewImage(
-          user.userImage 
-          ? `${user.userImage}`
-          : '/user.jpg'
-      );
-    } else {
-      setPreviewImage('/user.jpg');
+    if (user) {
+      form.reset({
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        email: user.email || "",
+        phone: user.phone || "",
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+      setPreviewImage(user.avatar || null);
     }
-  }, [user]);
+  }, [user, form]);
 
-  // Handle image change
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      
+      // Validate file size (max 800KB)
+      if (file.size > 800 * 1024) {
+        toast.error(isRTL ? "حجم الصورة يجب أن يكون أقل من 800KB" : "Image size must be less than 800KB");
+        return;
+      }
+
+      // Validate file type
+      if (!file.type.startsWith("image/")) {
+        toast.error(isRTL ? "يجب أن يكون الملف صورة" : "File must be an image");
+        return;
+      }
+
       form.setValue("userImage", file);
       setPreviewImage(URL.createObjectURL(file));
     }
   };
-  const userId = user._id || user.id;
-  // Form submission handler
+
   const onSubmit = async (data: z.infer<typeof userSchema>) => {
     if (!user) return;
-    
-    setIsPending(true);
-    const formDataToSend = new FormData();
-    
-    // Add user ID
-    formDataToSend.append('uId', user._id );
-    
-    // Add text data
-    formDataToSend.append('firstName', data.firstName);
-    formDataToSend.append('lastName', data.lastName);
-    formDataToSend.append('email', data.email);
-    formDataToSend.append('role', user.role); // Keep the existing role
-    
-    if (data.phone) {
-      formDataToSend.append('phone', data.phone);
-    }
-    
-    // Handle password change
-    if (data.currentPassword && data.newPassword) {
-      formDataToSend.append('oldPassword', data.currentPassword);
-      formDataToSend.append('newPassword', data.newPassword);
-      formDataToSend.append('password', 'currentpassword'); // For the regular update endpoint
-    } else {
-      // If no new password, send a placeholder to satisfy backend validation
-      formDataToSend.append('password', 'currentpassword');
-    }
-    
-    // Add user image if provided
-    if (data.userImage instanceof File) {
-      formDataToSend.append('userImage', data.userImage);
-    }
-    
-    try {
-      // Dispatch the updateUserProfile action
-      const resultAction = await dispatch(updateUserProfile({ formData: formDataToSend, userId }));
 
-      
-      if (updateUserProfile.fulfilled.match(resultAction)) {
-        // If password change was requested, call the password change endpoint
-        if (data.currentPassword && data.newPassword) {
-          try {
-            await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/user/change-password`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                uId: user._id,
-                oldPassword: data.currentPassword,
-                newPassword: data.newPassword,
-              }),
-              credentials: 'include',
-            });
-          } catch (passwordError: any) {
-            toast.error(passwordError.message || t.profile?.passwordChangeError || "Failed to update password");
-          }
-        }
-        
-        toast.success(resultAction.payload.message || t.profile?.profileUpdated || "Profile updated successfully");
-        router.refresh();
-        
-        // Reset password fields
-        form.setValue('currentPassword', '');
-        form.setValue('newPassword', '');
-        form.setValue('confirmPassword', '');
-      } else if (updateUserProfile.rejected.match(resultAction)) {
-        toast.error(resultAction.payload as string || t.common?.error || "An error occurred");
+    setIsPending(true);
+
+    try {
+      // Update Profile
+      const updateData: any = {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        phone: data.phone,
+      };
+
+      const profileResponse = await authService.updateProfile(updateData);
+
+      if (profileResponse.user) {
+        updateUser(profileResponse.user);
+        toast.success(
+          profileResponse.message || 
+          (isRTL ? "تم تحديث الملف الشخصي بنجاح" : "Profile updated successfully")
+        );
       }
+
+      // Change Password if provided
+      if (data.currentPassword && data.newPassword) {
+        try {
+          await authService.changePassword({
+            currentPassword: data.currentPassword,
+            newPassword: data.newPassword,
+          });
+          toast.success(isRTL ? "تم تغيير كلمة المرور بنجاح" : "Password changed successfully");
+
+          // Reset password fields
+          form.setValue("currentPassword", "");
+          form.setValue("newPassword", "");
+          form.setValue("confirmPassword", "");
+        } catch (passwordError: any) {
+          toast.error(
+            passwordError.response?.data?.message || 
+            (isRTL ? "فشل تغيير كلمة المرور" : "Failed to change password")
+          );
+        }
+      }
+
+      router.refresh();
     } catch (error: any) {
-      toast.error(error.message || t.common?.error || "An error occurred");
+      toast.error(
+        error.response?.data?.message || 
+        (isRTL ? "حدث خطأ" : "An error occurred")
+      );
     } finally {
       setIsPending(false);
     }
   };
 
+  const getInitials = () => {
+    if (!user) return "U";
+    return `${user.firstName?.[0] || ""}${user.lastName?.[0] || ""}`.toUpperCase();
+  };
+
   return (
-    <div className="w-full lg:w-3/4">
-      <Card className="shadow-sm">
-        <CardHeader className="pb-3">
-          <CardTitle>{t.navigation?.profile || "Profile"}</CardTitle>
-        </CardHeader>
-        
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              {/* Profile Image Section */}
-              <div className="flex flex-col items-center sm:flex-row sm:items-start gap-6 pb-6">
-                <div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-gray-100 shadow-sm">
-                  {previewImage ? (
-                    <Image
-                      src={previewImage}
-                      alt={t.admin?.userImagePreview || "User image preview"}
-                      fill
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gray-100">
-                      <User className="w-16 h-16 text-gray-400" />
-                    </div>
-                  )}
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Edit className="h-5 w-5" />
+          {isRTL ? "تحرير الملف الشخصي" : "Edit Profile"}
+        </CardTitle>
+        <CardDescription>
+          {isRTL ? "قم بتحديث معلومات حسابك الشخصية" : "Update your personal account information"}
+        </CardDescription>
+      </CardHeader>
+
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            {/* Profile Picture Section */}
+            <div className="flex flex-col sm:flex-row items-center gap-6">
+              <Avatar className="h-24 w-24">
+                <AvatarImage src={previewImage || undefined} />
+                <AvatarFallback className="text-2xl">{getInitials()}</AvatarFallback>
+              </Avatar>
+
+              <div className="flex-1 space-y-3">
+                <div>
+                  <h3 className="text-base font-medium">
+                    {isRTL ? "صورة الملف الشخصي" : "Profile Picture"}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {isRTL ? "JPG، GIF أو PNG. الحد الأقصى 800KB" : "JPG, GIF or PNG. Max size of 800KB"}
+                  </p>
                 </div>
-                
-                <div className="flex-1 space-y-4">
-                  <div>
-                    <h3 className="text-lg font-medium">{t.profile?.uploadImage || "Profile Picture"}</h3>
-                    <p className="text-sm text-gray-500">
-                      {t.profile?.imageRequirements || "JPG, GIF or PNG. Max size of 800K"}
-                    </p>
-                  </div>
-                  
+
+                <div className="flex items-center gap-3">
                   <Input
+                    id="userImage"
                     type="file"
                     accept="image/*"
                     onChange={handleImageChange}
-                    className="max-w-sm"
+                    className="hidden"
                   />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => document.getElementById("userImage")?.click()}
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    {isRTL ? "رفع صورة" : "Upload Image"}
+                  </Button>
+                  {previewImage && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setPreviewImage(null);
+                        form.setValue("userImage", undefined);
+                      }}
+                    >
+                      {isRTL ? "إزالة" : "Remove"}
+                    </Button>
+                  )}
                 </div>
               </div>
-              
-              <Separator />
-              
-              {/* Personal Information Section */}
-              <div className="pt-4">
-                <h3 className="text-lg font-medium mb-4">{t.profile?.personalInfo || "Personal Information"}</h3>
+            </div>
+
+            <Separator />
+
+            {/* Personal Information */}
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-medium mb-4">
+                  {isRTL ? "المعلومات الشخصية" : "Personal Information"}
+                </h3>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField
@@ -258,51 +272,66 @@ export default function ProfileForm({ t }: { t: TranslationType }) {
                     name="firstName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t.formFields?.firstName || "First Name"}</FormLabel>
+                        <FormLabel className="flex items-center gap-2">
+                          <User className="h-4 w-4" />
+                          {isRTL ? "الاسم الأول" : "First Name"}
+                        </FormLabel>
                         <FormControl>
-                          <Input {...field} />
+                          <Input {...field} placeholder={isRTL ? "أحمد" : "John"} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="lastName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t.formFields?.lastName || "Last Name"}</FormLabel>
+                        <FormLabel className="flex items-center gap-2">
+                          <User className="h-4 w-4" />
+                          {isRTL ? "اسم العائلة" : "Last Name"}
+                        </FormLabel>
                         <FormControl>
-                          <Input {...field} />
+                          <Input {...field} placeholder={isRTL ? "محمد" : "Doe"} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t.formFields?.email || "Email"}</FormLabel>
+                        <FormLabel className="flex items-center gap-2">
+                          <Mail className="h-4 w-4" />
+                          {isRTL ? "البريد الإلكتروني" : "Email"}
+                        </FormLabel>
                         <FormControl>
-                          <Input {...field} />
+                          <Input {...field} type="email" disabled />
                         </FormControl>
+                        <FormDescription>
+                          {isRTL ? "لا يمكن تغيير البريد الإلكتروني" : "Email cannot be changed"}
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="phone"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t.formFields?.phone || "Phone"}</FormLabel>
+                        <FormLabel className="flex items-center gap-2">
+                          <Phone className="h-4 w-4" />
+                          {isRTL ? "رقم الهاتف" : "Phone"}
+                        </FormLabel>
                         <FormControl>
-                          <Input {...field} />
+                          <Input {...field} type="tel" placeholder="+1 234 567 8900" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -310,52 +339,58 @@ export default function ProfileForm({ t }: { t: TranslationType }) {
                   />
                 </div>
               </div>
-              
-              <Separator />
-              
-              {/* Password Change Section */}
-              <div className="pt-4">
-                <h3 className="text-lg font-medium mb-4">{t.profile?.changePassword || "Change Password"}</h3>
-                
+            </div>
+
+            <Separator />
+
+            {/* Password Change */}
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-medium mb-1 flex items-center gap-2">
+                  <Lock className="h-5 w-5" />
+                  {isRTL ? "تغيير كلمة المرور" : "Change Password"}
+                </h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  {isRTL ? "اترك الحقول فارغة إذا لم ترد تغيير كلمة المرور" : "Leave fields empty if you don't want to change your password"}
+                </p>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField
                     control={form.control}
                     name="currentPassword"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t.profile?.currentPassword || "Current Password"}</FormLabel>
+                      <FormItem className="md:col-span-2">
+                        <FormLabel>{isRTL ? "كلمة المرور الحالية" : "Current Password"}</FormLabel>
                         <FormControl>
-                          <Input type="password" {...field} />
+                          <Input {...field} type="password" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
-                  <div></div> {/* Empty div for grid alignment */}
-                  
+
                   <FormField
                     control={form.control}
                     name="newPassword"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t.profile?.newPassword || "New Password"}</FormLabel>
+                        <FormLabel>{isRTL ? "كلمة المرور الجديدة" : "New Password"}</FormLabel>
                         <FormControl>
-                          <Input type="password" {...field} />
+                          <Input {...field} type="password" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="confirmPassword"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t.profile?.confirmPassword || "Confirm New Password"}</FormLabel>
+                        <FormLabel>{isRTL ? "تأكيد كلمة المرور" : "Confirm New Password"}</FormLabel>
                         <FormControl>
-                          <Input type="password" {...field} />
+                          <Input {...field} type="password" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -363,23 +398,32 @@ export default function ProfileForm({ t }: { t: TranslationType }) {
                   />
                 </div>
               </div>
-              
-              <div className="pt-4 flex justify-end">
-                <Button type="submit" disabled={isPending} className="min-w-[120px]">
-                  {isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {t.common?.loading || "Loading..."}
-                    </>
-                  ) : (
-                    t.common?.save || "Save Changes"
-                  )}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
-    </div>
+            </div>
+
+            {/* Submit Button */}
+            <div className="flex justify-end gap-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.back()}
+                disabled={isPending}
+              >
+                {isRTL ? "إلغاء" : "Cancel"}
+              </Button>
+              <Button type="submit" disabled={isPending} className="min-w-[140px]">
+                {isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {isRTL ? "جاري الحفظ..." : "Saving..."}
+                  </>
+                ) : (
+                  isRTL ? "حفظ التغييرات" : "Save Changes"
+                )}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
   );
 }

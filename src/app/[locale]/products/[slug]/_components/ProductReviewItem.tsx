@@ -1,81 +1,64 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
-import {
-  createReview,
-  getProductReviews,
-  deleteReview,
-  uploadReviewImage,
-  getProduct,
-} from "@/server";
-import { useAppSelector } from "@/redux/hooks";
+import { useAuth } from "@/providers/AuthProvider";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Star, Upload, Trash2, Image as ImageIcon } from "lucide-react";
 import Image from "next/image";
-import { toast } from "react-toastify";
-import { IProduct } from "@/types/type";
+import { toast } from "react-hot-toast";
+import { Product } from "@/types";
 import Link from "@/components/link";
 import { Routes } from "@/constants/enums";
+import { getProduct, uploadReviewImage } from "@/server";
+import {
+  useProductReviews,
+  useCreateReview,
+  useDeleteReview,
+} from "@/hooks/useReviews";
 
 export default function ProductReviewItem({ slug }: { slug: string }) {
-  const [reviews, setReviews] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
   const [hoveredRating, setHoveredRating] = useState(0);
-  const [submitting, setSubmitting] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { locale } = useParams();
   const isRTL = locale === "ar";
-  const apiURL = process.env.NEXT_PUBLIC_API_URL;
-  const user = useAppSelector((state) => state.user.user);
+
+  const { user } = useAuth();
   const isAdmin = user?.role === "admin";
-  const [product, setProduct] = useState<IProduct | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const fetchProduct = React.useCallback(() => {
-    return getProduct(slug);
+
+  // Fetch product first (consider moving to parent or custom hook)
+  const [product, setProduct] = useState<Product | null>(null);
+  const [isProductLoading, setIsProductLoading] = useState(true);
+
+  useEffect(() => {
+    setIsProductLoading(true);
+    getProduct(slug)
+      .then((response) => {
+        if (response?.data?.data) {
+          setProduct(response.data.data);
+        } else if (response?.data) {
+          setProduct(response.data);
+        }
+      })
+      .catch((err) => console.error(err))
+      .finally(() => setIsProductLoading(false));
   }, [slug]);
 
-  useEffect(() => {
-    setIsLoading(true);
-    fetchProduct().then((data) => {
-      setProduct(data.data.data);
-    });
-    setIsLoading(false);
-  }, [fetchProduct]);
-  useEffect(() => {
-    if (product?._id) {
-      fetchReviews();
-    }
-  }, [product]);
+  // Hook for reviews
+  const { data: reviewsResponse, isLoading: reviewsLoading } =
+    useProductReviews(product?._id as string, { sort: "newest" });
 
-  const fetchReviews = async () => {
-    if (!product?._id) {
-      setLoading(false);
-      return;
-    }
+  // Mutations
+  const createReviewMutation = useCreateReview();
+  const deleteReviewMutation = useDeleteReview();
 
-    try {
-      setLoading(true);
-      const response = await getProductReviews(product._id);
-      setReviews(response.data.reviews || []);
-    } catch (error) {
-      console.error("Error fetching reviews:", error);
-      // Set empty reviews array on error instead of showing error toast
-      setReviews([]);
-      // Only show toast for network errors, not for empty reviews
-      if (error.message !== "Network Error" && error.response?.status !== 404) {
-        toast.error("Failed to load reviews");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+  const reviews = reviewsResponse?.reviews || [];
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -92,40 +75,36 @@ export default function ProductReviewItem({ slug }: { slug: string }) {
       return;
     }
 
+    if (!product?._id) return;
+
     try {
-      setSubmitting(true);
-      const response = await createReview({
-        productId:product._id,
-        rating,
-        comment,
+      const formData = new FormData();
+      formData.append("productId", product._id);
+      formData.append("rating", rating.toString());
+      formData.append("comment", comment);
+
+      createReviewMutation.mutate(formData, {
+        onSuccess: async (data: any) => {
+          const newReviewId = data?.review?._id || data?.data?.review?._id;
+
+          if (selectedImage && newReviewId) {
+            await handleUploadImage(newReviewId);
+          }
+
+          setRating(5);
+          setComment("");
+          setSelectedImage(null);
+          setImagePreview(null);
+          if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+          }
+        },
+        onError: (error) => {
+          console.error(error);
+        },
       });
-
-      if (response.data.success) {
-        const newReview = response.data.review;
-
-        // If an image was selected, upload it
-        if (selectedImage) {
-          await handleUploadImage(newReview._id);
-        }
-
-        toast.success("Review submitted successfully");
-        // Refresh reviews to include the new one with image
-        fetchReviews();
-
-        // Reset form
-        setRating(5);
-        setComment("");
-        setSelectedImage(null);
-        setImagePreview(null);
-        if (fileInputRef.current) {
-          fileInputRef.current.value = "";
-        }
-      }
     } catch (error) {
       console.error("Error submitting review:", error);
-      toast.error("Failed to submit review");
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -137,48 +116,31 @@ export default function ProductReviewItem({ slug }: { slug: string }) {
     formData.append("image", selectedImage);
 
     try {
-      const response = await uploadReviewImage(formData);
-      if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to upload image");
-      }
-      return response.data;
+      await uploadReviewImage(formData);
     } catch (error) {
-      console.error("Error uploading image:", error);
-      // More detailed error logging
-      if (error.response) {
-        console.error("Server response:", error.response.data);
-        console.error("Status code:", error.response.status);
-      }
-      toast.error("Failed to upload image. Please try again later.");
-      // Continue with the review submission even if image upload fails
-      return null;
+      console.error("Error uploading image", error);
+      toast.error("Failed to upload image");
     }
   };
 
-  const handleDeleteReview = async (reviewId: string) => {
-    try {
-      const response = await deleteReview(reviewId);
-      if (response.data.success) {
-        toast.success("Review deleted successfully");
-        // Remove the deleted review from the list
-        setReviews(reviews.filter((review) => review._id !== reviewId));
-      }
-    } catch (error) {
-      console.error("Error deleting review:", error);
-      toast.error("Failed to delete review");
+  const handleDeleteReview = (reviewId: string) => {
+    if (confirm("Are you sure you want to delete this review?")) {
+      deleteReviewMutation.mutate(reviewId);
     }
   };
 
-  const canDeleteReview = (review) => {
-    return isAdmin || (user && review.user._id === user._id);
+  const canDeleteReview = (review: any) => {
+    return isAdmin || (user && review.user?._id === user._id);
   };
-if(isLoading){
-  return (
-    <div className="flex justify-center items-center min-h-[400px]">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div>
-    </div>
-  );
-}
+
+  if (isProductLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div>
+      </div>
+    );
+  }
+
   return (
     <div
       className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10"
@@ -186,14 +148,21 @@ if(isLoading){
     >
       <h2 className="text-2xl font-bold mb-6">Product Reviews</h2>
 
-      {/* Review Form - Only show for logged in users */}
+      {/* Review Form */}
       {user ? (
         <div className="bg-gray-50 p-4 sm:p-6 rounded-lg mb-6 sm:mb-8">
-          <h3 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">Write a Review</h3>
-          <form onSubmit={handleSubmitReview} className="space-y-3 sm:space-y-4">
+          <h3 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">
+            Write a Review
+          </h3>
+          <form
+            onSubmit={handleSubmitReview}
+            className="space-y-3 sm:space-y-4"
+          >
             {/* Rating Stars */}
             <div>
-              <label className="block text-sm font-medium mb-1 sm:mb-2">Rating</label>
+              <label className="block text-sm font-medium mb-1 sm:mb-2">
+                Rating
+              </label>
               <div className="flex">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
@@ -216,9 +185,11 @@ if(isLoading){
               </div>
             </div>
 
-            {/* Comment Textarea */}
+            {/* Comment */}
             <div>
-              <label className="block text-sm font-medium mb-1 sm:mb-2">Your Review</label>
+              <label className="block text-sm font-medium mb-1 sm:mb-2">
+                Your Review
+              </label>
               <Textarea
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
@@ -280,17 +251,26 @@ if(isLoading){
             <Button
               type="submit"
               className="bg-secondary hover:bg-secondary/90 text-white"
-              disabled={submitting}
+              disabled={createReviewMutation.isPending}
             >
-              {submitting ? "Submitting..." : "Submit Review"}
+              {createReviewMutation.isPending
+                ? "Submitting..."
+                : "Submit Review"}
             </Button>
           </form>
         </div>
       ) : (
         <div className="bg-gray-50 p-6 rounded-lg mb-8 text-center">
-          <h3 className="text-xl font-semibold mb-4">Want to share your thoughts?</h3>
-          <p className="mb-4">Please login to write a review for this product.</p>
-          <Link href={`/${locale}/${Routes.LOGIN}`} className="bg-secondary text-white px-6 py-2 rounded hover:bg-secondary/90">
+          <h3 className="text-xl font-semibold mb-4">
+            Want to share your thoughts?
+          </h3>
+          <p className="mb-4">
+            Please login to write a review for this product.
+          </p>
+          <Link
+            href={`/${locale}/${Routes.LOGIN}`}
+            className="bg-secondary text-white px-6 py-2 rounded hover:bg-secondary/90"
+          >
             Login to Review
           </Link>
         </div>
@@ -300,13 +280,13 @@ if(isLoading){
       <div>
         <h3 className="text-xl font-semibold mb-4">Customer Reviews</h3>
 
-        {loading ? (
+        {reviewsLoading ? (
           <div className="flex justify-center items-center py-10">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div>
           </div>
         ) : reviews.length > 0 ? (
           <div className="space-y-6">
-            {reviews.map((review) => (
+            {reviews.map((review: any) => (
               <div key={review._id} className="border-b pb-6">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center">
@@ -338,6 +318,7 @@ if(isLoading){
                         size="sm"
                         onClick={() => handleDeleteReview(review._id)}
                         className="text-red-500 border-red-200 hover:bg-red-50"
+                        disabled={deleteReviewMutation.isPending}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -349,7 +330,7 @@ if(isLoading){
                 {/* Review Images */}
                 {review.images && review.images.length > 0 && (
                   <div className="mt-3 flex flex-wrap gap-2">
-                    {review.images.map((image, imgIndex) => (
+                    {review.images.map((image: string, imgIndex: number) => (
                       <div
                         key={imgIndex}
                         className="relative w-20 h-20 rounded overflow-hidden"

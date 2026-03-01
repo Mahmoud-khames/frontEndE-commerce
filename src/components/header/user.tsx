@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import * as React from "react";
@@ -10,32 +9,30 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { User2 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { useAppSelector } from "@/redux/hooks";
+import { useAuth } from "@/providers";
+import { useClearCart } from "@/hooks/useCart";
+import { useClearWishlist } from "@/hooks/useWishlist";
 import { UserRole, Routes } from "@/constants/enums";
-import { logout } from "@/redux/features/user/userSlice";
-import { clearCart } from "@/redux/features/cart/cartSlice";
-import { clearWishlist } from "@/redux/features/wishList/wishlistSlice";
-import { useAppDispatch } from "@/redux/hooks";
 import Image from "next/image";
 
-interface UserProps {
+export default function User({
+  t,
+}: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   t: any;
-  onLogout?: () => void;
-}
-
-export default function User({ t }: any) {
-  const dispatch = useAppDispatch();
+}) {
+  const { user, logout } = useAuth();
+  const clearCartMutation = useClearCart();
+  const clearWishlistMutation = useClearWishlist();
   const { locale } = useParams();
   const router = useRouter();
-  const { user } = useAppSelector((state) => state.user);
 
-  const handleLogout = () => {
-    dispatch(logout());
-    dispatch(clearCart()); // Clear the cart when logging out
-    dispatch(clearWishlist()); // Clear the wishlist when logging out
+  const handleLogout = async () => {
+    await logout();
+    clearCartMutation.mutate();
+    clearWishlistMutation.mutate();
     router.push(`/${locale}`);
   };
-  const apiURL = process.env.NEXT_PUBLIC_API_URL;
 
   return (
     <DropdownMenu>
@@ -48,9 +45,7 @@ export default function User({ t }: any) {
             <span className="text-sm font-medium">
               {
                 <Image
-                  src={
-                    user?.userImage ? `${user?.userImage}` : "/user.jpg"
-                  }
+                  src={user?.avatar ? `${user?.avatar}` : "/user.jpg"}
                   alt={user.firstName}
                   width={50}
                   height={50}
@@ -85,11 +80,13 @@ export default function User({ t }: any) {
           </>
         ) : (
           <>
-            <DropdownMenuItem onClick={() => router.push(`/${locale}/login`)}>
+            <DropdownMenuItem
+              onClick={() => router.push(`/${locale}/auth/signin`)}
+            >
               {t.login}
             </DropdownMenuItem>
             <DropdownMenuItem
-              onClick={() => router.push(`/${locale}/register`)}
+              onClick={() => router.push(`/${locale}/auth/signup`)}
             >
               {t.register}
             </DropdownMenuItem>

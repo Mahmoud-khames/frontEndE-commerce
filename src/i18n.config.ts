@@ -1,18 +1,15 @@
-import { Languages } from "@/constants/enums";
+// i18n.config.ts
+export type Locale = 'en' | 'ar';
 
-// أنواع اللغات المدعومة
-export type LanguageType = Languages.ARABIC | Languages.ENGLISH;
+export const defaultLocale: Locale = 'en';
+export const locales: Locale[] = ['en', 'ar'];
 
-// هيكل إعدادات i18n
-type i18nType = {
-  defaultLocale: LanguageType;
-  locales: LanguageType[];
+export const localeNames: Record<Locale, string> = {
+  en: 'English',
+  ar: 'العربية',
 };
 
-export const i18n: i18nType = {
-  defaultLocale: Languages.ARABIC,
-  locales: [Languages.ARABIC, Languages.ENGLISH],
+export const localeDirections: Record<Locale, 'ltr' | 'rtl'> = {
+  en: 'ltr',
+  ar: 'rtl',
 };
-
-// نوع لكل Locale مدعوم (واحد من الـ locales المحددين)
-export type Locale = (typeof i18n)["locales"][number];

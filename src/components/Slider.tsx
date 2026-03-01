@@ -7,9 +7,13 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 interface SliderProps {
   children: React.ReactNode;
+  className?: string;
+  slidesPerView?: number;
+  spaceBetween?: number;
+  breakpoints?: any;
 }
 
-export default function Slider({ children }: SliderProps) {
+export default function Slider({ children, className }: SliderProps) {
   const sliderRef = useRef<HTMLDivElement>(null);
   const [isAtStart, setIsAtStart] = useState(true);
   const [isAtEnd, setIsAtEnd] = useState(false);
@@ -59,7 +63,7 @@ export default function Slider({ children }: SliderProps) {
 
   return (
     <div
-      className="relative w-full"
+      className={`relative w-full ${className || ""}`}
       dir={isRTL ? Directions.RTL : Directions.LTR}
     >
       <div

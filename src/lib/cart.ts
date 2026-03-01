@@ -1,126 +1,75 @@
-import { CartItem } from '@/redux/features/cart/cartSlice';
-import axios from 'axios';
+// src/lib/cart.ts
+import type { CartItem } from "@/types";
 
-// TODO: get delivery fee from backend with coupon
-export const deliveryFee: number = 0;
+export const deliveryFee = 10;
+export const FREE_SHIPPING_THRESHOLD = 100;
 
-export const getCartQuantity = (cart: CartItem[]): number => {
-  return cart.reduce((quantity, item) => quantity + (item.quantity || 0), 0);
-};
-
-export const getSubTotal = (cart: CartItem[]): number => {
-  return cart.reduce((total, cartItem) => {
-    const itemTotal = (cartItem.product?.productPrice || 0) * (cartItem.quantity || 0);
-    return total + itemTotal;
+/**
+ * Calculate subtotal from cart items
+ */
+export function getSubTotal(items: CartItem[]): number {
+  if (!items || items.length === 0) return 0;
+  
+  return items.reduce((total, item) => {
+    if (!item.product) return total;
+    
+    // Use discounted price if available, otherwise regular price
+    const price = item.discountedPrice > 0 
+      ? item.discountedPrice 
+      : item.price || item.product.productPrice || 0;
+    
+    return total + (price * item.quantity);
   }, 0);
-};
+}
 
-export const getTotalAmount = (cart: CartItem[], discount: number = 0): number => {
-  const subtotal = getSubTotal(cart);
-  return subtotal - discount;
-};
-
-export const activeCoupon = async (couponCode: string): Promise<{valid: boolean; message?: string}> => {
-  try {
-    const apiURL = process.env.NEXT_PUBLIC_API_URL || '';
-    const response = await axios.get(`${apiURL}/api/coupon/validate/${couponCode}`);
-    return {
-      valid: response.data.valid,
-      message: response.data.message
-    };
-  } catch (error) {
-    console.error("Error validating coupon:", error);
-    return {
-      valid: false,
-      message: "Error validating coupon"
-    };
-  }
-};
-
-export const getCouponDiscount = async (couponCode: string, total: number): Promise<{discount: number; error?: string}> => {
-  try {
-    const apiURL = process.env.NEXT_PUBLIC_API_URL || '';
-    const response = await axios.get(`${apiURL}/api/coupon/calculate/${couponCode}?total=${total}`);
+/**
+ * Calculate total discount from cart items
+ */
+export function getTotalDiscount(items: CartItem[]): number {
+  if (!items || items.length === 0) return 0;
+  
+  return items.reduce((total, item) => {
+    if (!item.product) return total;
     
-    if (response.data.error) {
-      return { 
-        discount: 0,
-        error: response.data.error
-      };
+    if (item.discountedPrice > 0 && item.price > item.discountedPrice) {
+      const discount = (item.price - item.discountedPrice) * item.quantity;
+      return total + discount;
     }
-    
-    return { 
-      discount: response.data.discount || 0
-    };
-  } catch (error) {
-    console.error("Error calculating discount:", error);
-    return { 
-      discount: 0,
-      error: "Error calculating discount"
-    };
-  }
-};
+    return total;
+  }, 0);
+}
 
-export const getDeliveryFee = async (couponCode?: string): Promise<number> => {
-  // TODO: Implement backend call to get delivery fee with coupon
-  return deliveryFee;
-};
+/**
+ * Get delivery fee based on subtotal
+ */
+export function getDeliveryFee(subtotal: number): number {
+  return subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : deliveryFee;
+}
 
-export const getTotalWithDiscount = async (
-  cart: CartItem[],
-  couponCode: string
-): Promise<{ total: number; discount: number }> => {
-  const subtotal = getSubTotal(cart);
+/**
+ * Calculate total with delivery
+ */
+export function getTotalWithDelivery(subtotal: number, discount: number = 0): number {
+  const delivery = getDeliveryFee(subtotal);
+  return Math.max(0, subtotal - discount + delivery);
+}
+
+/**
+ * Format cart summary
+ */
+export function getCartSummary(items: CartItem[], couponDiscount: number = 0) {
+  const subtotal = getSubTotal(items);
+  const productDiscount = getTotalDiscount(items);
+  const delivery = getDeliveryFee(subtotal);
+  const total = subtotal - couponDiscount + delivery;
   
-  if (!couponCode) {
-    return { total: subtotal, discount: 0 };
-  }
-  
-  try {
-    const apiURL = process.env.NEXT_PUBLIC_API_URL || '';
-    const response = await axios.get(`${apiURL}/api/coupon/calculate/${couponCode}?total=${subtotal}`);
-    
-    if (response.data.error) {
-      return { total: subtotal, discount: 0 };
-    }
-    
-    const discount = response.data.discount || 0;
-    const discountedTotal = subtotal - discount;
-    
-    return { 
-      total: discountedTotal, 
-      discount: discount 
-    };
-  } catch (error) {
-    console.error("Error calculating discount:", error);
-    return { total: subtotal, discount: 0 };
-  }
-};
-
-export const getTotalWithDelivery = (total: number, discount: number = 0): number => {
-  return total + deliveryFee;
-};
-
-export const getFinalTotal = (subtotal: number, discount: number = 0): number => {
-  return subtotal - discount + deliveryFee;
-};
-
-// Synchronous version for the checkout page
-export const getCouponDiscountSync = (couponCode: string, total: number): number => {
-  // This is a synchronous version that should only be used in reducers
-  // It doesn't actually validate the coupon, just returns a placeholder
-  // The actual validation should happen in the async version
-  
-  // For now, just return 0 as we can't make API calls synchronously
-  // The real discount will be applied by the async thunk
-  return 0;
-};
-
-export const getTotalWithDiscountSync = (
-  cart: CartItem[],
-  couponCode: string,
-  discountAmount: number = 0
-): number => {
-  const subtotal = getSubTotal(cart);
-  return subtotal - discountAmount;
-};
+  return {
+    subtotal,
+    productDiscount,
+    couponDiscount,
+    delivery,
+    total: Math.max(0, total),
+    itemsCount: items.reduce((sum, item) => sum + item.quantity, 0),
+    hasFreeShipping: subtotal >= FREE_SHIPPING_THRESHOLD,
+  };
+}

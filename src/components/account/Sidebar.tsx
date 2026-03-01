@@ -1,10 +1,17 @@
-"use client"
+"use client";
 
 import Link from "@/components/link";
 import { Routes } from "@/constants/enums";
 import { usePathname } from "next/navigation";
 
-export default function Sidebar({ t, locale }: { t: any; locale: string }) {
+export default function Sidebar({
+  t,
+  locale,
+}: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  t: any;
+  locale: string;
+}) {
   const navItems = [
     { title: t.account.myProfile, href: Routes.PROFILE },
     { title: t.account.myOrders, href: Routes.ORDERS },

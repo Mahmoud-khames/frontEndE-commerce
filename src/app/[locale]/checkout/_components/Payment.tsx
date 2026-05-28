@@ -24,6 +24,8 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getProductName as getLocalizedProductName } from "@/lib/localized";
+import { getSafeErrorMessage } from "@/lib/apiError";
 
 // Constants
 const DELIVERY_FEE = 10;
@@ -116,9 +118,21 @@ export default function Payment({ trans, locale }: PaymentProps) {
   // Get localized product name
   const getProductName = (item: any) => {
     if (!item.product) return isRTL ? "منتج غير معروف" : "Unknown Product";
+    return getLocalizedProductName(item.product, locale);
+  };
+
+  const getCouponDiscountText = () => {
+    if (!appliedCoupon) return "";
+
+    if (appliedCoupon.discountType === "percentage") {
+      return isRTL
+        ? `خصم ${appliedCoupon.discountValue}%`
+        : `${appliedCoupon.discountValue}% off`;
+    }
+
     return isRTL
-      ? item.product.productNameAr || item.product.productNameEn
-      : item.product.productNameEn || item.product.productNameAr;
+      ? `خصم ${formatCurrency(appliedCoupon.discountValue)}`
+      : `${formatCurrency(appliedCoupon.discountValue)} off`;
   };
 
   // Handle apply coupon
@@ -132,7 +146,7 @@ export default function Payment({ trans, locale }: PaymentProps) {
     applyCoupon(couponCode.trim().toUpperCase(), {
       onError: (error: any) => {
         setCouponError(
-          error.response?.data?.message || 
+          getSafeErrorMessage(error, locale) ||
           (isRTL ? "كوبون غير صالح" : "Invalid coupon code")
         );
       },
@@ -255,7 +269,7 @@ export default function Payment({ trans, locale }: PaymentProps) {
                           </span>
                         )}
                         {item.size && item.color && (
-                          <span className="text-xs text-muted-foreground">•</span>
+                          <span className="text-xs text-muted-foreground">/</span>
                         )}
                         {item.color && (
                           <span className="text-xs text-muted-foreground">
@@ -360,7 +374,7 @@ export default function Payment({ trans, locale }: PaymentProps) {
           {(calculations.productDiscount > 0 || calculations.couponDiscount > 0) && (
             <div className="text-center p-3 bg-green-50 rounded-lg border border-green-200">
               <span className="text-green-700 font-medium">
-                🎉 {isRTL ? "وفرت" : "You saved"}{" "}
+                {isRTL ? "وفرت" : "You saved"}{" "}
                 {formatCurrency(calculations.productDiscount + calculations.couponDiscount)}!
               </span>
             </div>
@@ -423,9 +437,7 @@ export default function Payment({ trans, locale }: PaymentProps) {
                     {appliedCoupon.code}
                   </span>
                   <p className="text-xs text-green-600">
-                    {appliedCoupon.discountType === "percentage"
-                      ? `${appliedCoupon.discountValue}% ${isRTL ? "خصم" : "off"}`
-                      : `${formatCurrency(appliedCoupon.discountValue)} ${isRTL ? "خصم" : "off"}`}
+                    {getCouponDiscountText()}
                   </p>
                 </div>
               </div>

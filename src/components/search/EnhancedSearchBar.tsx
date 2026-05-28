@@ -421,31 +421,40 @@ export default function EnhancedSearchBar({
                 </div>
                 <div className="space-y-1">
                   {searchHistory.map((term, i) => (
-                    <motion.button
+                    <motion.div
                       key={term}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: i * 0.05 }}
-                      onClick={() => {
-                        setSearchTerm(term);
-                        handleSearchSubmit(term);
-                      }}
                       className={cn(
                         "flex items-center justify-between w-full p-2 hover:bg-white rounded-lg transition-colors text-sm group",
                         selectedIndex === i && "bg-white shadow-sm"
                       )}
                     >
-                      <span className="flex items-center gap-2">
-                        <Clock className="h-3.5 w-3.5 text-gray-400" />
-                        <span className="text-gray-700">{term}</span>
-                      </span>
                       <button
+                        type="button"
+                        onClick={() => {
+                          setSearchTerm(term);
+                          handleSearchSubmit(term);
+                        }}
+                        className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                      >
+                        <Clock className="h-3.5 w-3.5 text-gray-400" />
+                        <span className="truncate text-gray-700">{term}</span>
+                      </button>
+                      <button
+                        type="button"
                         onClick={(e) => removeFromHistory(term, e)}
                         className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-gray-100 rounded"
+                        aria-label={
+                          isRTL
+                            ? `حذف ${term} من سجل البحث`
+                            : `Remove ${term} from search history`
+                        }
                       >
                         <X className="h-3 w-3 text-gray-400" />
                       </button>
-                    </motion.button>
+                    </motion.div>
                   ))}
                 </div>
               </div>
@@ -461,6 +470,11 @@ export default function EnhancedSearchBar({
                 <div className="space-y-1">
                   {suggestions.products.map((product, i) => {
                     const itemIndex = searchHistory.length + i;
+                    const hasDiscount =
+                      product.finalPrice > 0 && product.finalPrice < product.price;
+                    const displayPrice = hasDiscount
+                      ? product.finalPrice
+                      : product.price;
                     return (
                       <Link
                         key={product.id}
@@ -501,13 +515,13 @@ export default function EnhancedSearchBar({
                             )}
                           </p>
                           <div className="flex items-center gap-2 mt-0.5">
-                            {product.finalPrice < product.price && (
+                            {hasDiscount && (
                               <span className="text-xs text-gray-400 line-through">
                                 {formatPrice(product.price)}
                               </span>
                             )}
                             <span className="text-sm font-semibold text-primary">
-                              {formatPrice(product.finalPrice || product.price)}
+                              {formatPrice(displayPrice)}
                             </span>
                           </div>
                         </div>
@@ -634,9 +648,12 @@ export default function EnhancedSearchBar({
                   </p>
                   <button
                     onClick={() => handleSearchSubmit()}
-                    className="text-primary hover:text-primary/80 font-medium text-sm hover:underline transition-colors"
+                    className="inline-flex items-center gap-1 text-primary hover:text-primary/80 font-medium text-sm hover:underline transition-colors"
                   >
-                    {t.search?.searchAll || "Search all products"} →
+                    {t.search?.searchAll || "Search all products"}
+                    <ArrowRight
+                      className={cn("h-4 w-4", isRTL && "rotate-180")}
+                    />
                   </button>
                 </motion.div>
               )}

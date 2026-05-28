@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Filter, X } from "lucide-react";
 import { useAvailableFilters } from "@/hooks/useProducts";
 import { ProductFilters as ProductFiltersType } from "@/types";
+import { getCategoryName } from "@/lib/localized";
 
 export default function ProductFilter({
   t,
@@ -35,6 +36,8 @@ export default function ProductFilter({
   const [onSale, setOnSale] = useState(false);
   const [newArrivals, setNewArrivals] = useState(false);
   const [inStock, setInStock] = useState(false);
+  const isRTL = locale === "ar";
+  const filterLocale = locale === "ar" ? "ar" : "en";
 
   // Initialize filter states from URL params
   useEffect(() => {
@@ -44,10 +47,10 @@ export default function ProductFilter({
       const maxParam = searchParams.get("maxPrice");
 
       const min = minParam
-        ? parseInt(minParam)
+        ? Number(minParam)
         : availableFilters.priceRange.min;
       const max = maxParam
-        ? parseInt(maxParam)
+        ? Number(maxParam)
         : availableFilters.priceRange.max;
       setPriceRange([min, max]);
     }
@@ -84,17 +87,98 @@ export default function ProductFilter({
 
   // Handle price input changes
   const handleMinPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value);
+    const value = Number(e.target.value);
     if (!isNaN(value)) {
       setPriceRange([value, priceRange[1]]);
     }
   };
 
   const handleMaxPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value);
+    const value = Number(e.target.value);
     if (!isNaN(value)) {
       setPriceRange([priceRange[0], value]);
     }
+  };
+
+  const normalizedPriceRange = useMemo<[number, number]>(() => {
+    if (!availableFilters?.priceRange) return priceRange;
+
+    const min = Math.max(
+      availableFilters.priceRange.min,
+      Math.min(priceRange[0], availableFilters.priceRange.max)
+    );
+    const max = Math.max(
+      min,
+      Math.min(priceRange[1], availableFilters.priceRange.max)
+    );
+
+    return [min, max];
+  }, [availableFilters?.priceRange, priceRange]);
+
+  const availableColors = useMemo(
+    () =>
+      availableFilters?.colors?.[filterLocale] ||
+      availableFilters?.colors?.en ||
+      [],
+    [availableFilters?.colors, filterLocale]
+  );
+
+  const availableSizes = useMemo(
+    () =>
+      availableFilters?.sizes?.[filterLocale] ||
+      availableFilters?.sizes?.en ||
+      [],
+    [availableFilters?.sizes, filterLocale]
+  );
+
+  const activeFilterCount = useMemo(() => {
+    const hasCustomPrice =
+      availableFilters?.priceRange &&
+      (normalizedPriceRange[0] !== availableFilters.priceRange.min ||
+        normalizedPriceRange[1] !== availableFilters.priceRange.max);
+
+    return (
+      selectedCategories.length +
+      selectedColors.length +
+      selectedSizes.length +
+      (onSale ? 1 : 0) +
+      (newArrivals ? 1 : 0) +
+      (inStock ? 1 : 0) +
+      (hasCustomPrice ? 1 : 0)
+    );
+  }, [
+    availableFilters?.priceRange,
+    inStock,
+    newArrivals,
+    normalizedPriceRange,
+    onSale,
+    selectedCategories.length,
+    selectedColors.length,
+    selectedSizes.length,
+  ]);
+
+  const getColorPreview = (color: string) => {
+    const normalized = color.trim().toLowerCase();
+    const colorMap: Record<string, string> = {
+      أحمر: "red",
+      ازرق: "blue",
+      أزرق: "blue",
+      اخضر: "green",
+      أخضر: "green",
+      اسود: "black",
+      أسود: "black",
+      ابيض: "white",
+      أبيض: "white",
+      اصفر: "yellow",
+      أصفر: "yellow",
+      رمادي: "gray",
+      وردي: "pink",
+      بني: "brown",
+      برتقالي: "orange",
+      بنفسجي: "purple",
+    };
+
+    return colorMap[color] || normalized;
   };
 
   // Toggle category selection
@@ -127,14 +211,14 @@ export default function ProductFilter({
 
     // Set price range
     if (availableFilters?.priceRange) {
-      if (priceRange[0] !== availableFilters.priceRange.min) {
-        params.set("minPrice", priceRange[0].toString());
+      if (normalizedPriceRange[0] !== availableFilters.priceRange.min) {
+        params.set("minPrice", normalizedPriceRange[0].toString());
       } else {
         params.delete("minPrice");
       }
 
-      if (priceRange[1] !== availableFilters.priceRange.max) {
-        params.set("maxPrice", priceRange[1].toString());
+      if (normalizedPriceRange[1] !== availableFilters.priceRange.max) {
+        params.set("maxPrice", normalizedPriceRange[1].toString());
       } else {
         params.delete("maxPrice");
       }
@@ -222,8 +306,6 @@ export default function ProductFilter({
     router.push(`${pathname}?${params.toString()}`);
   };
 
-  const isRTL = locale === "ar";
-
   if (!availableFilters) {
     // Return skeleton or null while loading available filters
     // For now just return null or maybe the container structure
@@ -242,23 +324,32 @@ export default function ProductFilter({
   }
 
   return (
-    <div className="p-3 sm:p-4 border rounded-lg bg-white space-y-4 sm:space-y-6">
+    <div className="p-3 sm:p-4 border rounded-md bg-white space-y-4 sm:space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="font-semibold text-base sm:text-lg">
           {t.products.filter}
+          {activeFilterCount > 0 && (
+            <span className="mx-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-secondary px-1.5 text-xs font-semibold text-white">
+              {activeFilterCount}
+            </span>
+          )}
         </h2>
 
         {/* Mobile filter toggle button - only visible on small screens */}
         <button
-          className="lg:hidden text-sm bg-gray-100 px-2 py-1 rounded flex items-center gap-1"
+          className="lg:hidden text-sm bg-gray-100 px-3 py-2 rounded-md flex items-center gap-2"
           onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
+          aria-expanded={mobileFiltersOpen}
         >
           {mobileFiltersOpen ? (
             <>
               <X size={16} /> {t.products.hideFilters}
             </>
           ) : (
-            <Filter />
+            <>
+              <Filter size={16} />
+              {t.products.filter}
+            </>
           )}
         </button>
       </div>
@@ -273,12 +364,12 @@ export default function ProductFilter({
 
       {/* Filter content - collapsible on mobile */}
       <div
-        className={`lg:space-y-4 sm:lg:space-y-5 ${
+        className={`lg:space-y-5 ${
           mobileFiltersOpen
             ? `fixed inset-y-0 ${
-                isRTL ? "left-0" : "right-0"
+                isRTL ? "right-0" : "left-0"
               } w-[85%] max-w-sm bg-white z-50 p-4 overflow-y-auto transform transition-transform duration-300 translate-x-0 shadow-2xl`
-            : "hidden lg:block"
+            : "hidden lg:block lg:space-y-5"
         }`}
         dir={isRTL ? "rtl" : "ltr"}
       >
@@ -323,7 +414,8 @@ export default function ProductFilter({
                   value={priceRange[0]}
                   onChange={handleMinPriceChange}
                   min={availableFilters.priceRange.min}
-                  max={priceRange[1]}
+                  max={normalizedPriceRange[1]}
+                  onBlur={() => setPriceRange(normalizedPriceRange)}
                   className="mt-1 text-sm"
                 />
               </div>
@@ -333,8 +425,9 @@ export default function ProductFilter({
                   type="number"
                   value={priceRange[1]}
                   onChange={handleMaxPriceChange}
-                  min={priceRange[0]}
+                  min={normalizedPriceRange[0]}
                   max={availableFilters.priceRange.max}
+                  onBlur={() => setPriceRange(normalizedPriceRange)}
                   className="mt-1 text-sm"
                 />
               </div>
@@ -349,7 +442,7 @@ export default function ProductFilter({
               <h3 className="font-medium text-sm sm:text-base">
                 {t.products.categories}
               </h3>
-              <div className="space-y-1 sm:space-y-2 max-h-32 sm:max-h-40 overflow-y-auto pr-1">
+              <div className="space-y-1.5 sm:space-y-2 max-h-52 overflow-y-auto pr-1">
                 {availableFilters.categories.map((category) => (
                   <div
                     key={category._id}
@@ -366,7 +459,7 @@ export default function ProductFilter({
                       htmlFor={`category-${category._id}`}
                       className="text-xs sm:text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                     >
-                      {locale === "en" ? category.nameEn : category.nameAr}
+                      {getCategoryName(category, locale)}
                     </label>
                   </div>
                 ))}
@@ -375,46 +468,49 @@ export default function ProductFilter({
           )}
 
         {/* Colors */}
-        {availableFilters?.colors && (
+        {availableColors.length > 0 && (
           <div className="space-y-2 sm:space-y-3 mb-4">
             <h3 className="font-medium text-sm sm:text-base">
               {t.products.colors}
             </h3>
-            <div className="flex flex-wrap gap-1 sm:gap-2">
-              {(
-                availableFilters.colors[locale as "en" | "ar"] ||
-                availableFilters.colors.en ||
-                []
-              ).map((color) => (
-                <div
+            <div className="flex flex-wrap gap-1.5 sm:gap-2">
+              {availableColors.map((color) => (
+                <button
+                  type="button"
                   key={color}
-                  className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full cursor-pointer border ${
+                  className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs sm:text-sm transition-colors ${
                     selectedColors.includes(color)
-                      ? "ring-2 ring-offset-1 sm:ring-offset-2 ring-black"
-                      : ""
+                      ? "border-black bg-black text-white"
+                      : "border-gray-200 bg-white text-black hover:bg-gray-50"
                   }`}
-                  style={{ backgroundColor: color }}
                   onClick={() => toggleColor(color)}
                   title={color}
-                />
+                  aria-label={
+                    isRTL ? `تصفية اللون ${color}` : `Filter color ${color}`
+                  }
+                  aria-pressed={selectedColors.includes(color)}
+                >
+                  <span
+                    className="h-3.5 w-3.5 rounded-full border border-black/10"
+                    style={{ backgroundColor: getColorPreview(color) }}
+                  />
+                  <span>{color}</span>
+                </button>
               ))}
             </div>
           </div>
         )}
 
         {/* Sizes */}
-        {availableFilters?.sizes && (
+        {availableSizes.length > 0 && (
           <div className="space-y-2 sm:space-y-3 mb-4">
             <h3 className="font-medium text-sm sm:text-base">
               {t.products.sizes}
             </h3>
             <div className="flex flex-wrap gap-1 sm:gap-2">
-              {(
-                availableFilters.sizes[locale as "en" | "ar"] ||
-                availableFilters.sizes.en ||
-                []
-              ).map((size) => (
-                <div
+              {availableSizes.map((size) => (
+                <button
+                  type="button"
                   key={size}
                   className={`px-2 sm:px-3 py-0.5 sm:py-1 border rounded cursor-pointer text-xs sm:text-sm ${
                     selectedSizes.includes(size)
@@ -422,9 +518,10 @@ export default function ProductFilter({
                       : "bg-white text-black hover:bg-gray-100"
                   }`}
                   onClick={() => toggleSize(size)}
+                  aria-pressed={selectedSizes.includes(size)}
                 >
                   {size}
-                </div>
+                </button>
               ))}
             </div>
           </div>
@@ -440,7 +537,7 @@ export default function ProductFilter({
             <Checkbox
               id="discount"
               checked={onSale}
-              onCheckedChange={() => setOnSale(!onSale)}
+              onCheckedChange={(checked) => setOnSale(Boolean(checked))}
             />
             <label
               htmlFor="discount"
@@ -458,7 +555,7 @@ export default function ProductFilter({
             <Checkbox
               id="new"
               checked={newArrivals}
-              onCheckedChange={() => setNewArrivals(!newArrivals)}
+              onCheckedChange={(checked) => setNewArrivals(Boolean(checked))}
             />
             <label
               htmlFor="new"
@@ -476,7 +573,7 @@ export default function ProductFilter({
             <Checkbox
               id="inStock"
               checked={inStock}
-              onCheckedChange={() => setInStock(!inStock)}
+              onCheckedChange={(checked) => setInStock(Boolean(checked))}
             />
             <label
               htmlFor="inStock"

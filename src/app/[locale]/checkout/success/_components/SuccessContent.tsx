@@ -24,6 +24,7 @@ import {
   CreditCard,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { getSafeErrorMessage } from "@/lib/apiError";
 
 interface OrderDetails {
   success: boolean;
@@ -129,9 +130,11 @@ export default function SuccessContent({ locale, t }: SuccessContentProps) {
           toast.error(t.networkError || "Network error");
         } else {
           setError(
-            err.response?.data?.message || 
-            t.paymentVerificationError || 
-            "Verification error"
+            getSafeErrorMessage(
+              err,
+              locale,
+              t.paymentVerificationError || "Verification error"
+            )
           );
           toast.error(t.paymentVerificationError || "Error");
         }

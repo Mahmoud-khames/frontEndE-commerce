@@ -17,6 +17,7 @@ import { Product } from "@/types";
 import { ProductFilters as ProductFiltersType } from "@/types";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import EnhancedSearchBar from "@/components/search/EnhancedSearchBar";
+import { getCategoryName } from "@/lib/localized";
 
 export default function ProductList({ t, locale }: { t: any; locale: string }) {
   const router = useRouter();
@@ -51,6 +52,18 @@ export default function ProductList({ t, locale }: { t: any; locale: string }) {
   const products = (response?.data as unknown as Product[]) || [];
   const pagination = response?.pagination;
   const availableFilters = availableFiltersResponse?.filters;
+  const selectedCategoryLabels =
+    filters.categories
+      ?.split(",")
+      .filter(Boolean)
+      .map((categoryId) => {
+        const category = availableFilters?.categories.find(
+          (item) => item._id === categoryId
+        );
+        return category ? getCategoryName(category, locale) : categoryId;
+      }) || [];
+  const selectedColorLabels = filters.colors?.split(",").filter(Boolean) || [];
+  const selectedSizeLabels = filters.sizes?.split(",").filter(Boolean) || [];
 
   // Helpers to update URL
   const updateURL = (newParams: Record<string, string | undefined | null>) => {
@@ -62,6 +75,9 @@ export default function ProductList({ t, locale }: { t: any; locale: string }) {
         params.set(key, value);
       }
     });
+    if (!("page" in newParams)) {
+      params.set("page", "1");
+    }
     router.push(`${pathname}?${params.toString()}`);
   };
 
@@ -203,8 +219,8 @@ export default function ProductList({ t, locale }: { t: any; locale: string }) {
             filters.maxPrice !== undefined) && (
             <div className="bg-gray-100 rounded-full px-2 sm:px-3 py-0.5 sm:py-1 text-xs sm:text-sm flex items-center gap-1 whitespace-nowrap">
               <span>
-                {t.products?.price || "Price"}: ${filters.minPrice || 0} - $
-                {filters.maxPrice || "Max"}
+                {t.products?.price || "Price"}: ${filters.minPrice ?? 0} -{" "}
+                {filters.maxPrice ? `$${filters.maxPrice}` : t.products?.max || "Max"}
               </span>
               <button
                 className="ml-1 text-gray-500 hover:text-gray-700"
@@ -220,7 +236,13 @@ export default function ProductList({ t, locale }: { t: any; locale: string }) {
           {/* Category filter tag */}
           {filters.categories && (
             <div className="bg-gray-100 rounded-full px-2 sm:px-3 py-0.5 sm:py-1 text-xs sm:text-sm flex items-center gap-1 whitespace-nowrap">
-              <span>{t.products?.categories || "Categories"}</span>
+              <span>
+                {t.products?.categories || "Categories"}:{" "}
+                {selectedCategoryLabels.slice(0, 2).join(", ")}
+                {selectedCategoryLabels.length > 2
+                  ? ` +${selectedCategoryLabels.length - 2}`
+                  : ""}
+              </span>
               <button
                 className="ml-1 text-gray-500 hover:text-gray-700"
                 onClick={() => {
@@ -235,7 +257,13 @@ export default function ProductList({ t, locale }: { t: any; locale: string }) {
           {/* Colors filter tag */}
           {filters.colors && (
             <div className="bg-gray-100 rounded-full px-2 sm:px-3 py-0.5 sm:py-1 text-xs sm:text-sm flex items-center gap-1 whitespace-nowrap">
-              <span>{t.products?.colors || "Colors"}</span>
+              <span>
+                {t.products?.colors || "Colors"}:{" "}
+                {selectedColorLabels.slice(0, 3).join(", ")}
+                {selectedColorLabels.length > 3
+                  ? ` +${selectedColorLabels.length - 3}`
+                  : ""}
+              </span>
               <button
                 className="ml-1 text-gray-500 hover:text-gray-700"
                 onClick={() => {
@@ -250,7 +278,13 @@ export default function ProductList({ t, locale }: { t: any; locale: string }) {
           {/* Sizes filter tag */}
           {filters.sizes && (
             <div className="bg-gray-100 rounded-full px-2 sm:px-3 py-0.5 sm:py-1 text-xs sm:text-sm flex items-center gap-1 whitespace-nowrap">
-              <span>{t.products?.sizes || "Sizes"}</span>
+              <span>
+                {t.products?.sizes || "Sizes"}:{" "}
+                {selectedSizeLabels.slice(0, 3).join(", ")}
+                {selectedSizeLabels.length > 3
+                  ? ` +${selectedSizeLabels.length - 3}`
+                  : ""}
+              </span>
               <button
                 className="ml-1 text-gray-500 hover:text-gray-700"
                 onClick={() => {
@@ -283,7 +317,7 @@ export default function ProductList({ t, locale }: { t: any; locale: string }) {
           {filters.new && (
             <div className="bg-green-100 rounded-full px-2 sm:px-3 py-0.5 sm:py-1 text-xs sm:text-sm flex items-center gap-1 whitespace-nowrap">
               <span className="text-green-700">
-                {t.products?.newArrivals || "New"}
+                {t.products?.newArrivals || (isRTL ? "جديد" : "New")}
               </span>
               <button
                 className="ml-1 text-green-500 hover:text-green-700"
@@ -300,7 +334,7 @@ export default function ProductList({ t, locale }: { t: any; locale: string }) {
           {filters.inStock && (
             <div className="bg-blue-100 rounded-full px-2 sm:px-3 py-0.5 sm:py-1 text-xs sm:text-sm flex items-center gap-1 whitespace-nowrap">
               <span className="text-blue-700">
-                {t.products?.inStock || "In Stock"}
+                {t.products?.inStock || (isRTL ? "متوفر" : "In Stock")}
               </span>
               <button
                 className="ml-1 text-blue-500 hover:text-blue-700"
@@ -317,7 +351,7 @@ export default function ProductList({ t, locale }: { t: any; locale: string }) {
           <button
             className="text-xs sm:text-sm text-secondary hover:underline ml-2 font-medium"
             onClick={() => {
-              router.push(`${pathname}`);
+              router.push(pathname);
             }}
           >
             {t.products?.clearAll || "Clear All"}
@@ -334,7 +368,7 @@ export default function ProductList({ t, locale }: { t: any; locale: string }) {
         <>
           {/* Products grid */}
           {products && products.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 justify-items-center px-3 sm:px-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6 justify-items-center px-3 sm:px-4">
               {products.map((product) => (
                 <ProductCard key={product._id} product={product} t={t} />
               ))}

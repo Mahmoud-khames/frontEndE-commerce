@@ -7,19 +7,14 @@ import useFormFields from "@/hooks/useFormFields";
 import { useLogin } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
 import React from "react";
-
-interface Translation {
-  auth: {
-    login: string;
-  };
-}
+import { getSafeErrorMessage } from "@/lib/apiError";
 
 interface FormProps {
   locale: string;
-  t: Translation;
+  t: any;
 }
 
-export default function Form({ t }: FormProps) {
+export default function Form({ locale, t }: FormProps) {
   const loginMutation = useLogin();
   const { getFormFields } = useFormFields({ slug: Pages.LOGIN, t });
   const [error, setError] = React.useState<string | null>(null);
@@ -44,9 +39,7 @@ export default function Form({ t }: FormProps) {
       { email, password },
       {
         onError: (err: any) => {
-          setError(
-            err.response?.data?.message || err.message || "Login failed"
-          );
+          setError(getSafeErrorMessage(err, locale, "Login failed"));
         },
       }
     );

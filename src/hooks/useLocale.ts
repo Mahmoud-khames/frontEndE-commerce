@@ -2,48 +2,29 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import type { Locale } from '@/types';
+import type { Category, Locale, Product } from '@/types';
+import {
+  getCategoryName,
+  getLocalizedValue as readLocalizedValue,
+  getProductDescription,
+  getProductName,
+} from '@/lib/localized';
 
 export const useLocale = () => {
   const params = useParams();
   const locale = (params?.locale as Locale) || 'en';
   const isRTL = locale === 'ar';
 
-  const getLocalizedValue = <T extends { en: T['en']; ar: T['ar'] }>(
-    obj: T
-  ): T['en'] | T['ar'] => {
-    return locale === 'ar' ? obj.ar : obj.en;
-  };
-
-  const getProductName = (product: {
-    productNameEn: string;
-    productNameAr: string;
-  }): string => {
-    return locale === 'ar' ? product.productNameAr : product.productNameEn;
-  };
-
-  const getProductDescription = (product: {
-    productDescriptionEn: string;
-    productDescriptionAr: string;
-  }): string => {
-    return locale === 'ar'
-      ? product.productDescriptionAr
-      : product.productDescriptionEn;
-  };
-
-  const getCategoryName = (category: {
-    nameEn: string;
-    nameAr: string;
-  }): string => {
-    return locale === 'ar' ? category.nameAr : category.nameEn;
-  };
-
   return {
     locale,
     isRTL,
-    getLocalizedValue,
-    getProductName,
-    getProductDescription,
-    getCategoryName,
+    getLocalizedValue: (value: Parameters<typeof readLocalizedValue>[0]) =>
+      readLocalizedValue(value, locale),
+    getProductName: (product: Partial<Product>) =>
+      getProductName(product, locale),
+    getProductDescription: (product: Partial<Product>) =>
+      getProductDescription(product, locale),
+    getCategoryName: (category: Partial<Category>) =>
+      getCategoryName(category, locale),
   };
 };

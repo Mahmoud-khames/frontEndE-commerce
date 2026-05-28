@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useApplyCoupon } from "@/hooks/useCart";
 import { toast } from "react-hot-toast";
+import { getSafeErrorMessage } from "@/lib/apiError";
 
 export default function CouponForm() {
   const [couponCode, setCouponCode] = useState("");
@@ -20,8 +21,7 @@ export default function CouponForm() {
       toast.success("Coupon applied successfully");
       setCouponCode("");
     } catch (error) {
-      toast.error("Error applying coupon");
-      console.error(error);
+      toast.error(getSafeErrorMessage(error, "en", "Error applying coupon"));
     }
   }, [couponCode, applyCouponMutation]);
 

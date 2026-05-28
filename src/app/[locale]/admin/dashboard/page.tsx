@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { getProductsCount, getOrdersCount, getUsersCount } from "@/server";
 import toast from "react-hot-toast";
 import { useAuth } from "@/providers/AuthProvider";
+import { getSafeErrorMessage } from "@/lib/apiError";
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -58,20 +59,9 @@ export default function DashboardPage() {
       } catch (error) {
         console.error("Error fetching dashboard stats:", error);
         setStats((prev) => ({ ...prev, loading: false }));
-
-        if (error.response) {
-          toast.error(
-            `Server error: ${error.response.status} - ${
-              error.response.statusText || "Unknown error"
-            }`
-          );
-        } else if (error.request) {
-          toast.error(
-            "No response received from server. Please check your connection."
-          );
-        } else {
-          toast.error(`Error: ${error.message}`);
-        }
+        toast.error(
+          getSafeErrorMessage(error, "en", "Failed to load dashboard stats")
+        );
       }
     };
 

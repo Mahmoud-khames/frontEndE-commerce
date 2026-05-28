@@ -9,6 +9,12 @@ import type {
 } from "../types";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
+import { getSafeErrorMessage } from "@/lib/apiError";
+
+const getBrowserLocale = () =>
+  typeof window !== "undefined" && window.location.pathname.startsWith("/ar")
+    ? "ar"
+    : "en";
 
 export const useCurrentUser = () => {
   return useQuery({
@@ -41,6 +47,9 @@ export const useLogin = () => {
       toast.success(data.message || "Login successful");
       router.push("/");
     },
+    onError: (error) => {
+      toast.error(getSafeErrorMessage(error, getBrowserLocale()));
+    },
   });
 };
 
@@ -60,6 +69,9 @@ export const useRegister = () => {
       toast.success(data.message || "Registration successful");
       router.push("/");
     },
+    onError: (error) => {
+      toast.error(getSafeErrorMessage(error, getBrowserLocale()));
+    },
   });
 };
 
@@ -72,7 +84,7 @@ export const useLogout = () => {
     onSuccess: () => {
       queryClient.clear();
       toast.success("Logged out successfully");
-      router.push("/login");
+      router.push(`/${getBrowserLocale()}/auth/signin`);
     },
   });
 };
@@ -87,6 +99,9 @@ export const useUpdateProfile = () => {
       localStorage.setItem("user", JSON.stringify(data.user));
       toast.success(data.message || "Profile updated");
     },
+    onError: (error) => {
+      toast.error(getSafeErrorMessage(error, getBrowserLocale()));
+    },
   });
 };
 
@@ -96,6 +111,9 @@ export const useChangePassword = () => {
     onSuccess: (data) => {
       toast.success(data.message || "Password changed");
     },
+    onError: (error) => {
+      toast.error(getSafeErrorMessage(error, getBrowserLocale()));
+    },
   });
 };
 
@@ -104,6 +122,9 @@ export const useForgotPassword = () => {
     mutationFn: (email: string) => authService.forgotPassword(email),
     onSuccess: (data) => {
       toast.success(data.message || "Password reset email sent");
+    },
+    onError: (error) => {
+      toast.error(getSafeErrorMessage(error, getBrowserLocale()));
     },
   });
 };
@@ -116,7 +137,10 @@ export const useResetPassword = () => {
       authService.resetPassword(token, password),
     onSuccess: (data) => {
       toast.success(data.message || "Password reset successful");
-      router.push("/login");
+      router.push(`/${getBrowserLocale()}/auth/signin`);
+    },
+    onError: (error) => {
+      toast.error(getSafeErrorMessage(error, getBrowserLocale()));
     },
   });
 };

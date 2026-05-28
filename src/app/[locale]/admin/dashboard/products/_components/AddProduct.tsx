@@ -38,6 +38,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PlusCircle, X } from "lucide-react";
+import { getCategoryName } from "@/lib/localized";
 
 export function AddProduct({ t, locale }: { t: any; locale: string }) {
   const router = useRouter();
@@ -107,9 +108,7 @@ export function AddProduct({ t, locale }: { t: any; locale: string }) {
     productImage: z.any().refine((file) => file instanceof File, {
       message: t.admin.mainImageRequired,
     }),
-    productImages: z.array(z.any()).refine((files) => files.length > 0, {
-      message: t.admin.additionalImagesRequired,
-    }),
+    productImages: z.array(z.any()).optional().default([]),
   });
 
   const form = useForm<z.infer<typeof productSchema>>({
@@ -139,7 +138,7 @@ export function AddProduct({ t, locale }: { t: any; locale: string }) {
 
   // Helper handling
   const handleAddColor = (lang: "en" | "ar") => {
-    const input = lang === "en" ? colorInputEn : colorInputAr;
+    const input = (lang === "en" ? colorInputEn : colorInputAr).trim();
     const currentList = lang === "en" ? colorsEn : colorsAr;
     // const setList = lang === 'en' ? setColorsEn : setColorsAr; // Use correct setter via React closure but explicit here
     const setInput = lang === "en" ? setColorInputEn : setColorInputAr;
@@ -165,7 +164,7 @@ export function AddProduct({ t, locale }: { t: any; locale: string }) {
   };
 
   const handleAddSize = (lang: "en" | "ar") => {
-    const input = lang === "en" ? sizeInputEn : sizeInputAr;
+    const input = (lang === "en" ? sizeInputEn : sizeInputAr).trim();
     const currentList = lang === "en" ? sizesEn : sizesAr;
     const setInput = lang === "en" ? setSizeInputEn : setSizeInputAr;
     const fieldName = lang === "en" ? "productSizesEn" : "productSizesAr";
@@ -565,10 +564,7 @@ export function AddProduct({ t, locale }: { t: any; locale: string }) {
                             key={category._id}
                             value={category._id}
                           >
-                            {/* We use getLocalizedValue logic here implicitly or just show nameEn/Ar if available */}
-                            {category.nameEn ||
-                              category.nameAr ||
-                              category.name}
+                            {getCategoryName(category, locale)}
                           </SelectItem>
                         ))}
                       </SelectContent>

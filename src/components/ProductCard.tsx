@@ -12,6 +12,13 @@ import { usePathname } from "next/navigation";
 import ReamoveFromWishList from "./Wishlist/ReamoveFromWishList";
 import { useParams } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  getProductColors,
+  getProductName,
+  getProductSizes,
+} from "@/lib/localized";
+import { getProductDisplayPricing } from "@/lib/productPricing";
+import { getProductReviewCount } from "@/lib/reviews";
 
 // إضافة مكون ProductCardSkeleton
 export function ProductCardSkeleton() {
@@ -54,6 +61,13 @@ export default function ProductCard({
 }) {
   const pathname = usePathname();
   const { locale } = useParams();
+  const currentLocale = locale === "ar" ? "ar" : "en";
+  const productName = getProductName(product, currentLocale, "Product");
+  const pricing = getProductDisplayPricing(product);
+  const reviewCount = getProductReviewCount(product);
+  const newLabel = currentLocale === "ar" ? "جديد" : "NEW";
+  const unavailableTitle =
+    currentLocale === "ar" ? "رابط المنتج غير متاح" : "Product link unavailable";
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
@@ -69,86 +83,6 @@ export default function ProductCard({
 
   const handleImageLoad = () => {
     setImageLoaded(true);
-  };
-
-  // حساب سعر البيع الفعلي (بعد الخصم إذا كان موجودًا وغير منتهي)
-  const getDisplayPrice = () => {
-    const now = new Date();
-    const discountEndDate = product.productDiscountEndDate
-      ? new Date(product.productDiscountEndDate)
-      : null;
-
-    if (
-      product.hasActiveDiscount &&
-      product.productDiscountPrice > 0 &&
-      discountEndDate &&
-      now <= discountEndDate
-    ) {
-      return product.productDiscountPrice;
-    }
-    return product.productPrice;
-  };
-
-  // الحصول على السعر الأصلي (قبل الخصم)
-  const getOriginalPrice = () => {
-    const now = new Date();
-    const discountEndDate = product.productDiscountEndDate
-      ? new Date(product.productDiscountEndDate)
-      : null;
-
-    if (
-      product.hasActiveDiscount &&
-      product.productDiscountPrice > 0 &&
-      discountEndDate &&
-      now <= discountEndDate
-    ) {
-      return product.productPrice;
-    }
-    if (product.oldProductPrice && product.oldProductPrice > 0) {
-      return product.oldProductPrice;
-    }
-    return null;
-  };
-
-  // حساب نسبة الخصم للعرض
-  const getDiscountPercentage = () => {
-    const now = new Date();
-    const discountEndDate = product.productDiscountEndDate
-      ? new Date(product.productDiscountEndDate)
-      : null;
-
-    if (
-      product.hasActiveDiscount &&
-      product.productDiscountPercentage > 0 &&
-      discountEndDate &&
-      now <= discountEndDate
-    ) {
-      return Math.round(product.productDiscountPercentage);
-    }
-    if (product.productDiscount > 0) {
-      return Math.round(product.productDiscount);
-    }
-    if (product.productDiscount == 0) {
-      return undefined;
-    }
-    return null;
-  };
-
-  // التحقق مما إذا كان المنتج له خصم نشط
-  const hasDiscount = () => {
-    const now = new Date();
-    const discountEndDate = product.productDiscountEndDate
-      ? new Date(product.productDiscountEndDate)
-      : null;
-
-    return (
-      (product.hasActiveDiscount &&
-        discountEndDate &&
-        now <= discountEndDate) ||
-      (product.oldProductPrice && product.oldProductPrice > 0) ||
-      product.productDiscountPercentage > 0 ||
-      product.productDiscount > 0
-    );
   };
 
   return (
@@ -173,19 +107,7 @@ export default function ProductCard({
               width={190}
               height={170}
               alt={
-                locale === "ar"
-                  ? product.productNameAr ||
-                    (typeof product.productName === "object" &&
-                      (product.productName as any)["ar"]) ||
-                    (product.productName as string) ||
-                    product.productNameEn ||
-                    "Product Image"
-                  : product.productNameEn ||
-                    (typeof product.productName === "object" &&
-                      (product.productName as any)["en"]) ||
-                    (product.productName as string) ||
-                    product.productNameAr ||
-                    "Product Image"
+                productName || "Product Image"
               }
               className={`object-contain max-w-[90%] max-h-[90%] w-auto h-auto ${
                 !imageLoaded && !imageError ? "invisible" : "visible"
@@ -199,10 +121,10 @@ export default function ProductCard({
         {/* Badges Container */}
         <div className="absolute top-2 left-2 flex flex-col gap-2">
           {/* Discount Badge */}
-          {hasDiscount() && getDiscountPercentage() && (
+          {pricing.discountPercentage !== null && (
             <div className="w-14 h-7 bg-secondary rounded flex items-center justify-center">
               <p className="text-white text-[12px] font-semibold">
-                -{getDiscountPercentage()}%
+                -{pricing.discountPercentage}%
               </p>
             </div>
           )}
@@ -211,7 +133,7 @@ export default function ProductCard({
           {product.NEW && (
             <div className="w-14 h-7 bg-green-400 rounded flex items-center justify-center">
               <p className="text-white text-[12px] font-semibold">
-                {t?.home?.formattedDate || "NEW"}
+                {newLabel}
               </p>
             </div>
           )}
@@ -231,7 +153,7 @@ export default function ProductCard({
               ) : (
                 <div
                   className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center cursor-not-allowed"
-                  title="Product slug unavailable"
+                  title={unavailableTitle}
                 >
                   <Eye className="text-gray-500 w-6 h-6" />
                 </div>
@@ -252,7 +174,7 @@ export default function ProductCard({
               ) : (
                 <div
                   className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center cursor-not-allowed"
-                  title="Product slug unavailable"
+                  title={unavailableTitle}
                 >
                   <Eye className="text-gray-500 w-6 h-6" />
                 </div>
@@ -264,7 +186,10 @@ export default function ProductCard({
         <div className="absolute bottom-0 left-0 w-full h-10 bg-black text-white text-[16px] font-medium opacity-0 opacity-100 transition-opacity cursor-pointer">
           <AddToCart
             product={product}
-            disabled={!product.productSizes || !product.productColors}
+            disabled={
+              getProductSizes(product, currentLocale).length > 0 ||
+              getProductColors(product, currentLocale).length > 0
+            }
           />
         </div>
       </div>
@@ -273,18 +198,7 @@ export default function ProductCard({
       <div className="flex flex-col items-start w-full px-2">
         <div className="flex items-center justify-between w-full mt-4">
           <p className="text-[#000000] text-[16px] font-medium truncate max-w-full">
-            {locale === "ar"
-              ? product.productNameAr ||
-                (typeof product.productName === "object" &&
-                  (product.productName as any)["ar"]) ||
-                product.productName ||
-                product.productNameEn
-              : product.productNameEn ||
-                (typeof product.productName === "object" &&
-                  (product.productName as any)["en"]) ||
-                product.productName ||
-                product.productNameAr ||
-                "Product Name"}
+            {productName}
           </p>
         </div>
 
@@ -292,13 +206,13 @@ export default function ProductCard({
         <div className="flex items-center gap-3">
           {/* Current Price (After Discount) */}
           <p className="text-secondary text-[16px] font-medium">
-            ${getDisplayPrice().toFixed(2)}
+            ${pricing.currentPrice.toFixed(2)}
           </p>
 
           {/* Original Price (Strikethrough if discounted) */}
-          {getOriginalPrice() && (
+          {pricing.originalPrice !== null && (
             <p className="text-gray-400 text-[16px] line-through text-opacity-50">
-              ${getOriginalPrice()?.toFixed(2)}
+              ${pricing.originalPrice.toFixed(2)}
             </p>
           )}
         </div>
@@ -307,7 +221,7 @@ export default function ProductCard({
         <div className="flex items-center gap-1 mt-2">
           {renderStars(product.productRating)}
           <span className="text-gray-500 text-[14px] ml-2">
-            ({product.productReviews?.length || 0})
+            ({reviewCount})
           </span>
         </div>
       </div>

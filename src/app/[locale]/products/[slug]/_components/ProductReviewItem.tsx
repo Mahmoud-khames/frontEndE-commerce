@@ -17,6 +17,7 @@ import {
   useCreateReview,
   useDeleteReview,
 } from "@/hooks/useReviews";
+import { getSafeErrorMessage } from "@/lib/apiError";
 
 export default function ProductReviewItem({ slug }: { slug: string }) {
   const [rating, setRating] = useState(5);
@@ -46,7 +47,7 @@ export default function ProductReviewItem({ slug }: { slug: string }) {
           setProduct(response.data);
         }
       })
-      .catch((err) => console.error(err))
+      .catch(() => {})
       .finally(() => setIsProductLoading(false));
   }, [slug]);
 
@@ -100,11 +101,15 @@ export default function ProductReviewItem({ slug }: { slug: string }) {
           }
         },
         onError: (error) => {
-          console.error(error);
+          toast.error(
+            getSafeErrorMessage(error, String(locale), "Failed to submit review")
+          );
         },
       });
     } catch (error) {
-      console.error("Error submitting review:", error);
+      toast.error(
+        getSafeErrorMessage(error, String(locale), "Failed to submit review")
+      );
     }
   };
 
@@ -118,8 +123,9 @@ export default function ProductReviewItem({ slug }: { slug: string }) {
     try {
       await uploadReviewImage(formData);
     } catch (error) {
-      console.error("Error uploading image", error);
-      toast.error("Failed to upload image");
+      toast.error(
+        getSafeErrorMessage(error, String(locale), "Failed to upload image")
+      );
     }
   };
 

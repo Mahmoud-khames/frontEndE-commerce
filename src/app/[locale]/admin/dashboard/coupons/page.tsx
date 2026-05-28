@@ -9,9 +9,9 @@ import CouponItems from "./_components/couponItems";
 export async function generateMetadata({
   params,
 }: {
-  params: { locale: Locale };
+  params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
-  const { locale } = params;
+  const { locale } = await params;
   const isArabic = locale === "ar";
   
   return {
@@ -25,9 +25,10 @@ export async function generateMetadata({
 export default async function CouponsPage({
   params,
 }: {
-  params: { locale: Locale };
+  params: Promise<{ locale: string }>;
 }) {
-  const { locale } = params;
+  const { locale: localeParam } = await params;
+  const locale = localeParam as Locale;
   const { t } = await getTrans(locale);
 
   return (

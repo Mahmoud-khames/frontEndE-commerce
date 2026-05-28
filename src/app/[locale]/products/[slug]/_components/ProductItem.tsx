@@ -8,9 +8,19 @@ import React, { useEffect, useState } from "react";
 import Link from "@/components/link";
 import AddToWishlist from "@/components/Wishlist/AddToWishList";
 import AddToCart from "@/components/Cart/addToCart";
+import { RotateCcw, Truck } from "lucide-react";
 
 import { Product } from "@/types";
 import { getProduct } from "@/server";
+import { useParams } from "next/navigation";
+import {
+  getProductColors,
+  getProductDescription,
+  getProductName,
+  getProductSizes,
+} from "@/lib/localized";
+import { getProductDisplayPricing } from "@/lib/productPricing";
+import { getProductReviewCount } from "@/lib/reviews";
 
 // Custom skeleton component
 const CustomSkeleton = ({ className }: { className: string }) => (
@@ -18,6 +28,9 @@ const CustomSkeleton = ({ className }: { className: string }) => (
 );
 
 export default function ProductItem({ slug }: { slug: string }) {
+  const { locale } = useParams();
+  const currentLocale = locale === "ar" ? "ar" : "en";
+  const isArabic = currentLocale === "ar";
   const [product, setProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -33,24 +46,36 @@ export default function ProductItem({ slug }: { slug: string }) {
         setProduct(data.data.data);
         setIsLoading(false);
       })
-      .catch((error) => {
-        console.error("Error fetching product:", error);
+      .catch(() => {
         setIsLoading(false);
       });
   }, [fetchProduct]);
 
   // State for selected color, size, and quantity
   const [selectedColor, setSelectedColor] = useState<string | null>(
-    product?.productColors && product.productColors.length > 0
-      ? product.productColors[0]
-      : null
+    null
   );
-  const [selectedSize, setSelectedSize] = useState<string | null>(
-    product?.productSizes && product.productSizes.length > 0
-      ? product.productSizes[0]
-      : null
-  );
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [quantity, setQuantity] = useState<number>(1);
+
+  const productColors = React.useMemo(
+    () => (product ? getProductColors(product, currentLocale) : []),
+    [product, currentLocale]
+  );
+  const productSizes = React.useMemo(
+    () => (product ? getProductSizes(product, currentLocale) : []),
+    [product, currentLocale]
+  );
+  const productName = getProductName(product || undefined, currentLocale);
+  const productDescription = getProductDescription(
+    product || undefined,
+    currentLocale
+  );
+
+  useEffect(() => {
+    setSelectedColor((current) => current || productColors[0] || null);
+    setSelectedSize((current) => current || productSizes[0] || null);
+  }, [productColors, productSizes]);
 
   // Handle quantity changes
   const handleQuantityChange = (change: number) => {
@@ -82,12 +107,20 @@ export default function ProductItem({ slug }: { slug: string }) {
   if (!product) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <p>Product not found.</p>
+        <p>{isArabic ? "المنتج غير موجود." : "Product not found."}</p>
       </div>
     );
   }
 
   const apiURL = process.env.NEXT_PUBLIC_API_URL;
+  const pricing = getProductDisplayPricing(product);
+  const reviewCount = getProductReviewCount(product);
+  const productImages =
+    product.productImages?.length > 0
+      ? product.productImages
+      : product.productImage
+        ? [product.productImage]
+        : ["/placeholder-product.jpg"];
 
   // إضافة وظيفة للتعامل مع عناوين URL للصور
   const getImageUrl = (imagePath: string) => {
@@ -95,9 +128,8 @@ export default function ProductItem({ slug }: { slug: string }) {
       return "/placeholder-product.jpg";
     }
 
-    // تحقق مما إذا كانت الصورة من Cloudinary
-    if (imagePath.includes("cloudinary.com")) {
-      return imagePath; // استخدم عنوان URL كاملاً إذا كان من Cloudinary
+    if (/^https?:\/\//i.test(imagePath) || imagePath.startsWith("/")) {
+      return imagePath;
     }
 
     // تأكد من أن apiURL موجود وأنه ينتهي بـ "/"
@@ -119,18 +151,18 @@ export default function ProductItem({ slug }: { slug: string }) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 text-gray-600">
         <div className="flex justify-start items-center gap-2 text-xs sm:text-sm">
           <Link href="/" className="text-gray-600 hover:underline">
-            Home
+            {isArabic ? "الرئيسية" : "Home"}
           </Link>
           <span>/</span>
           <Link href="/products" className="text-gray-600 hover:underline">
-            Products
+            {isArabic ? "المنتجات" : "Products"}
           </Link>
           <span>/</span>
           <Link
             href={`/products/${slug}`}
             className="text-black hover:underline"
           >
-            {product.productName}
+            {productName}
           </Link>
         </div>
       </div>
@@ -142,8 +174,8 @@ export default function ProductItem({ slug }: { slug: string }) {
           <div className="w-full md:w-1/2">
             <div className="relative aspect-square mb-2 sm:mb-4 border rounded-md overflow-hidden">
               <Image
-                src={getImageUrl(selectedImage || product.productImages[0])}
-                alt={product.productName}
+                src={getImageUrl(selectedImage || productImages[0])}
+                alt={productName}
                 fill
                 className="
                   object-cover
@@ -154,7 +186,7 @@ export default function ProductItem({ slug }: { slug: string }) {
               />
             </div>
             <div className="flex gap-2 overflow-x-auto pb-2">
-              {product.productImages.map((image, index) => (
+              {productImages.map((image, index) => (
                 <button
                   key={index}
                   className={`w-10 h-10 sm:w-12 sm:h-12 rounded-md border-2 cursor-pointer flex-shrink-0 ${
@@ -167,7 +199,11 @@ export default function ProductItem({ slug }: { slug: string }) {
                   <div className="relative w-full h-full">
                     <Image
                       src={getImageUrl(image)}
-                      alt={`${product.productName} thumbnail ${index + 1}`}
+                      alt={
+                        isArabic
+                          ? `${productName} صورة مصغرة ${index + 1}`
+                          : `${productName} thumbnail ${index + 1}`
+                      }
                       fill
                       className="object-cover"
                     />
@@ -181,7 +217,7 @@ export default function ProductItem({ slug }: { slug: string }) {
           <div className="w-full md:w-1/2 flex flex-col gap-4">
             {/* Product Name */}
             <h2 className="text-xl sm:text-2xl font-bold">
-              {product.productName}
+              {productName}
             </h2>
 
             {/* Rating */}
@@ -190,21 +226,29 @@ export default function ProductItem({ slug }: { slug: string }) {
                 {renderStars(product.productRating || 0)}
               </div>
               <span className="text-gray-500 text-xs sm:text-sm">
-                ({product.productReviews?.length || 0} Reviews)
+                ({reviewCount}{" "}
+                {isArabic ? "تقييمات" : "Reviews"})
               </span>
               <span className="text-green-600 text-xs sm:text-sm">
-                In Stock
+                {isArabic ? "متوفر" : "In Stock"}
               </span>
             </div>
 
             {/* Price */}
-            <p className="text-xl sm:text-2xl font-semibold">
-              ${product.productDiscountPrice || product.productPrice}
-            </p>
+            <div className="flex items-center gap-3">
+              <p className="text-xl sm:text-2xl font-semibold">
+                ${pricing.currentPrice.toFixed(2)}
+              </p>
+              {pricing.originalPrice !== null && (
+                <p className="text-sm sm:text-base text-gray-400 line-through">
+                  ${pricing.originalPrice.toFixed(2)}
+                </p>
+              )}
+            </div>
 
             {/* Description */}
             <p className="text-gray-600 text-xs sm:text-sm">
-              {product.productDescription}
+              {productDescription}
             </p>
 
             {/* Divider */}
@@ -212,10 +256,12 @@ export default function ProductItem({ slug }: { slug: string }) {
 
             {/* Colors */}
             <div className="flex items-center gap-3">
-              <span className="text-black text-sm sm:text-base">Colours:</span>
+              <span className="text-black text-sm sm:text-base">
+                {isArabic ? "الألوان:" : "Colours:"}
+              </span>
               <div className="flex gap-2">
-                {product.productColors && product.productColors.length > 0 ? (
-                  product.productColors.map((color, index) => (
+                {productColors.length > 0 ? (
+                  productColors.map((color, index) => (
                     <button
                       key={index}
                       className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 cursor-pointer ${
@@ -225,21 +271,27 @@ export default function ProductItem({ slug }: { slug: string }) {
                       }`}
                       style={{ backgroundColor: color.toLowerCase() }}
                       onClick={() => setSelectedColor(color)}
-                      aria-label={`Select color ${color}`}
+                      aria-label={
+                        isArabic ? `اختر اللون ${color}` : `Select color ${color}`
+                      }
                     />
                   ))
                 ) : (
-                  <span className="text-gray-500 text-xs sm:text-sm">N/A</span>
+                  <span className="text-gray-500 text-xs sm:text-sm">
+                    {isArabic ? "غير متاح" : "N/A"}
+                  </span>
                 )}
               </div>
             </div>
 
             {/* Sizes */}
             <div className="flex items-center gap-3 flex-wrap">
-              <span className="text-black text-sm sm:text-base">Size:</span>
+              <span className="text-black text-sm sm:text-base">
+                {isArabic ? "المقاس:" : "Size:"}
+              </span>
               <div className="flex gap-2 flex-wrap">
-                {product.productSizes && product.productSizes.length > 0 ? (
-                  product.productSizes.map((size, index) => (
+                {productSizes.length > 0 ? (
+                  productSizes.map((size, index) => (
                     <button
                       key={index}
                       className={`px-2 py-1 sm:px-3 sm:py-1 border rounded-md text-xs sm:text-sm cursor-pointer ${
@@ -248,13 +300,17 @@ export default function ProductItem({ slug }: { slug: string }) {
                           : "border-gray-300"
                       } hover:bg-secondary hover:text-white transition-all duration-300`}
                       onClick={() => setSelectedSize(size)}
-                      aria-label={`Select size ${size}`}
+                      aria-label={
+                        isArabic ? `اختر المقاس ${size}` : `Select size ${size}`
+                      }
                     >
                       {size}
                     </button>
                   ))
                 ) : (
-                  <span className="text-gray-500 text-xs sm:text-sm">N/A</span>
+                  <span className="text-gray-500 text-xs sm:text-sm">
+                    {isArabic ? "غير متاح" : "N/A"}
+                  </span>
                 )}
               </div>
             </div>
@@ -266,7 +322,7 @@ export default function ProductItem({ slug }: { slug: string }) {
                 <button
                   className="px-2 py-1 sm:px-3 sm:py-2 text-base sm:text-lg cursor-pointer hover:bg-secondary hover:text-white transition-all duration-300 rounded-l-md"
                   onClick={() => handleQuantityChange(-1)}
-                  aria-label="Decrease quantity"
+                  aria-label={isArabic ? "تقليل الكمية" : "Decrease quantity"}
                 >
                   -
                 </button>
@@ -276,7 +332,7 @@ export default function ProductItem({ slug }: { slug: string }) {
                 <button
                   className="px-2 py-1 sm:px-3 sm:py-2 text-base sm:text-lg cursor-pointer hover:bg-secondary hover:text-white transition-all duration-300 rounded-r-md"
                   onClick={() => handleQuantityChange(1)}
-                  aria-label="Increase quantity"
+                  aria-label={isArabic ? "زيادة الكمية" : "Increase quantity"}
                 >
                   +
                 </button>
@@ -294,12 +350,8 @@ export default function ProductItem({ slug }: { slug: string }) {
                   selectedSize={selectedSize}
                   selectedColor={selectedColor}
                   disabled={
-                    (product.productSizes &&
-                      product.productSizes.length > 0 &&
-                      !selectedSize) ||
-                    (product.productColors &&
-                      product.productColors.length > 0 &&
-                      !selectedColor)
+                    (productSizes.length > 0 && !selectedSize) ||
+                    (productColors.length > 0 && !selectedColor)
                   }
                 />
               </div>
@@ -311,26 +363,30 @@ export default function ProductItem({ slug }: { slug: string }) {
             {/* Free Delivery & Return Policy */}
             <div className="mt-4 border border-gray-300 rounded-md">
               <div className="p-4 flex items-center gap-3 border-b border-gray-300">
-                <span className="text-xl sm:text-2xl">🚚</span>
+                <Truck className="h-6 w-6 text-gray-700" />
                 <div>
                   <p className="text-xs sm:text-sm font-semibold">
-                    Free Delivery
+                    {isArabic ? "توصيل مجاني" : "Free Delivery"}
                   </p>
                   <p className="text-xs text-gray-600">
-                    Enter your postal code for Delivery Availability
+                    {isArabic
+                      ? "أدخل الرمز البريدي لمعرفة توفر التوصيل"
+                      : "Enter your postal code for Delivery Availability"}
                   </p>
                 </div>
               </div>
               <div className="p-4 flex items-center gap-3">
-                <span className="text-xl sm:text-2xl">🔄</span>
+                <RotateCcw className="h-6 w-6 text-gray-700" />
                 <div>
                   <p className="text-xs sm:text-sm font-semibold">
-                    Return Delivery
+                    {isArabic ? "إرجاع الطلب" : "Return Delivery"}
                   </p>
                   <p className="text-xs text-gray-600">
-                    Free 30 Days Delivery Returns.{" "}
+                    {isArabic
+                      ? "إرجاع مجاني خلال 30 يوما. "
+                      : "Free 30 Days Delivery Returns. "}
                     <a href="#" className="underline">
-                      Details
+                      {isArabic ? "التفاصيل" : "Details"}
                     </a>
                   </p>
                 </div>

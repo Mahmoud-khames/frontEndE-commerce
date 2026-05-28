@@ -8,7 +8,12 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 const nextConfig: NextConfig = {
   trailingSlash: true,
   images: {
-    domains: ["via.placeholder.com", "images.pexels.com", "localhost"],
+    domains: [
+      "via.placeholder.com",
+      "images.pexels.com",
+      "cdn.dummyjson.com",
+      "localhost",
+    ],
     unoptimized: true,
   },
   eslint: {

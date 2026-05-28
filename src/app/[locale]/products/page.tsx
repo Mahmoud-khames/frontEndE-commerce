@@ -35,21 +35,21 @@ export default async function ProductsPage({
   const { t } = await getTrans(locale);
 
   return (
-    <div className="container mx-auto py-6 sm:py-8 lg:py-10 px-4 sm:px-6 lg:px-8">
+    <div className="container mx-auto py-5 sm:py-8 lg:py-10 px-3 sm:px-6 lg:px-8">
       {/* SearchParamsHandler removed as we moved to URL-based state management */}
       <h1 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8">
         {t.products.title}
       </h1>
 
       <Suspense fallback={<Loading />}>
-        <div className="flex flex-col lg:flex-row gap-6 sm:gap-8">
+        <div className="flex flex-col lg:flex-row gap-5 sm:gap-6 lg:gap-8 items-start">
           {/* Sidebar with filters - collapses on mobile */}
-          <div className="w-full lg:w-1/4 mb-4 lg:mb-0 lg:sticky lg:top-24 lg:h-fit">
+          <div className="w-full lg:w-[280px] xl:w-[300px] mb-4 lg:mb-0 lg:sticky lg:top-24 lg:h-fit">
             <ProductFilter t={t} locale={locale} />
           </div>
 
           {/* Main content with product list */}
-          <div className="w-full lg:w-3/4">
+          <div className="w-full lg:flex-1 min-w-0">
             <ProductList t={t} locale={locale} />
           </div>
         </div>

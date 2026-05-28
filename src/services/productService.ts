@@ -14,7 +14,7 @@ export const productService = {
   },
 
   getProduct: async (id: string): Promise<ProductResponse> => {
-    const { data } = await axiosInstance.get(`/api/product/id/${id}`);
+    const { data } = await axiosInstance.get(`/api/product/${id}`);
     return data;
   },
 

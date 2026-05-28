@@ -40,6 +40,14 @@ import {
 } from "@/components/ui/select";
 import { Product } from "@/types";
 import { Edit, X } from "lucide-react";
+import {
+  getCategoryName,
+  getLocalizedValue,
+  getProductColors,
+  getProductDescription,
+  getProductName,
+  getProductSizes,
+} from "@/lib/localized";
 
 export default function EditProduct({
   t,
@@ -86,24 +94,11 @@ export default function EditProduct({
     });
   };
 
-  const getLocalizedValue = (value: any, lang: string) => {
-    if (!value) return "";
-    if (typeof value === "string") return value;
-    if (typeof value === "object") {
-      return value[lang] || "";
-    }
-    return String(value);
-  };
-
   // Initialize Localized State
-  const initialColorsEn = normalizeArray(
-    (product as any).productColorsEn || []
-  );
-  const initialColorsAr = normalizeArray(
-    (product as any).productColorsAr || []
-  );
-  const initialSizesEn = normalizeArray((product as any).productSizesEn || []);
-  const initialSizesAr = normalizeArray((product as any).productSizesAr || []);
+  const initialColorsEn = normalizeArray(getProductColors(product, "en"));
+  const initialColorsAr = normalizeArray(getProductColors(product, "ar"));
+  const initialSizesEn = normalizeArray(getProductSizes(product, "en"));
+  const initialSizesAr = normalizeArray(getProductSizes(product, "ar"));
 
   const [colorsEn, setColorsEn] = useState<string[]>(initialColorsEn);
   const [colorsAr, setColorsAr] = useState<string[]>(initialColorsAr);
@@ -115,36 +110,10 @@ export default function EditProduct({
     if (open) {
       // Re-initialize state when modal opens to ensure fresh data if product prop changed
       // But also check if we need to fall back to generic arrays
-      let newColorsEn = normalizeArray((product as any).productColorsEn || []);
-      let newColorsAr = normalizeArray((product as any).productColorsAr || []);
-      let newSizesEn = normalizeArray((product as any).productSizesEn || []);
-      let newSizesAr = normalizeArray((product as any).productSizesAr || []);
-
-      if (
-        newColorsEn.length === 0 &&
-        newColorsAr.length === 0 &&
-        (product as any).productColors?.length > 0
-      ) {
-        const raw = (product as any).productColors;
-        if (Array.isArray(raw)) newColorsEn = normalizeArray(raw);
-        else if (typeof raw === "object") {
-          if (raw.en) newColorsEn = normalizeArray(raw.en);
-          if (raw.ar) newColorsAr = normalizeArray(raw.ar);
-        }
-      }
-
-      if (
-        newSizesEn.length === 0 &&
-        newSizesAr.length === 0 &&
-        (product as any).productSizes?.length > 0
-      ) {
-        const raw = (product as any).productSizes;
-        if (Array.isArray(raw)) newSizesEn = normalizeArray(raw);
-        else if (typeof raw === "object") {
-          if (raw.en) newSizesEn = normalizeArray(raw.en);
-          if (raw.ar) newSizesAr = normalizeArray(raw.ar);
-        }
-      }
+      const newColorsEn = normalizeArray(getProductColors(product, "en"));
+      const newColorsAr = normalizeArray(getProductColors(product, "ar"));
+      const newSizesEn = normalizeArray(getProductSizes(product, "en"));
+      const newSizesAr = normalizeArray(getProductSizes(product, "ar"));
 
       setColorsEn(newColorsEn);
       setColorsAr(newColorsAr);
@@ -207,19 +176,19 @@ export default function EditProduct({
     resolver: zodResolver(productSchema),
     defaultValues: {
       productNameEn:
-        getLocalizedValue(product?.productName, "en") ||
+        getProductName(product, "en", "") ||
         (product as any).productNameEn ||
         "",
       productNameAr:
-        getLocalizedValue(product?.productName, "ar") ||
+        getProductName(product, "ar", "") ||
         (product as any).productNameAr ||
         "",
       productDescriptionEn:
-        getLocalizedValue(product?.productDescription, "en") ||
+        getProductDescription(product, "en") ||
         (product as any).productDescriptionEn ||
         "",
       productDescriptionAr:
-        getLocalizedValue(product?.productDescription, "ar") ||
+        getProductDescription(product, "ar") ||
         (product as any).productDescriptionAr ||
         "",
       productPrice: product?.productPrice?.toString() || "",
@@ -239,7 +208,7 @@ export default function EditProduct({
           ? (product.productCategory as any)._id
           : product?.productCategory || "",
       productQuantity: product?.productQuantity?.toString() || "",
-      productStatus: product?.productStatus || true,
+      productStatus: product?.productStatus ?? true,
       NEW: product?.NEW || false,
       productCode: (product as any)?.productCode || "",
       productColorsEn: [], // synced via state/effect
@@ -253,7 +222,7 @@ export default function EditProduct({
 
   // Handlers
   const handleAddColor = (lang: "en" | "ar") => {
-    const input = lang === "en" ? colorInputEn : colorInputAr;
+    const input = (lang === "en" ? colorInputEn : colorInputAr).trim();
     const currentList = lang === "en" ? colorsEn : colorsAr;
     const setList = lang === "en" ? setColorsEn : setColorsAr;
     const setInput = lang === "en" ? setColorInputEn : setColorInputAr;
@@ -273,7 +242,7 @@ export default function EditProduct({
   };
 
   const handleAddSize = (lang: "en" | "ar") => {
-    const input = lang === "en" ? sizeInputEn : sizeInputAr;
+    const input = (lang === "en" ? sizeInputEn : sizeInputAr).trim();
     const currentList = lang === "en" ? sizesEn : sizesAr;
     const setList = lang === "en" ? setSizesEn : setSizesAr;
     const setInput = lang === "en" ? setSizeInputEn : setSizeInputAr;
@@ -664,9 +633,7 @@ export default function EditProduct({
                             key={category._id}
                             value={category._id}
                           >
-                            {category.nameEn ||
-                              category.nameAr ||
-                              category.name}
+                            {getCategoryName(category, locale)}
                           </SelectItem>
                         ))}
                       </SelectContent>

@@ -61,9 +61,7 @@ export const useTrackSearch = () => {
       clickedProduct?: string;
       sessionId?: string;
     }) => searchService.trackSearch(data),
-    onError: (error) => {
-      console.error("Failed to track search:", error);
-    },
+    onError: () => {},
   });
 };
 

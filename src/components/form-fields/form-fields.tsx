@@ -3,10 +3,11 @@ import { InputTypes } from "@/constants/enums";
 import TextField from "./text-field";
 import PasswordField from "./password-field";
 import Checkbox from "./checkbox";
-import { ValidationErrors } from "@/validations/auth";
 import { IFormField } from "@/types/app";
 interface Props extends IFormField {
-  error: ValidationErrors;
+  error?: any;
+  checked?: boolean;
+  onClick?: () => void;
 }
 
 const FormFields = (props: Props) => {

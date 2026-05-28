@@ -41,6 +41,8 @@ import {
 } from "@/hooks/useCart";
 import type { CartItem } from "@/types";
 import { cn } from "@/lib/utils";
+import { getSafeErrorMessage } from "@/lib/apiError";
+import { getProductName } from "@/lib/localized";
 
 export interface CartItemsProps {
   translations: any;
@@ -159,7 +161,13 @@ function CartItems({ translations, locale }: CartItemsProps) {
       await applyCouponMutation.mutateAsync(couponCode.trim().toUpperCase());
       setCouponCode("");
     } catch (err: any) {
-      setCouponError(err.response?.data?.message || "Invalid coupon");
+      setCouponError(
+        getSafeErrorMessage(
+          err,
+          locale,
+          isRTL ? "كوبون غير صالح" : "Invalid coupon"
+        )
+      );
     }
   }, [couponCode, applyCouponMutation, isRTL]);
 
@@ -168,6 +176,20 @@ function CartItems({ translations, locale }: CartItemsProps) {
     setCouponCode("");
     setCouponError("");
   }, [removeCouponMutation]);
+
+  const getCouponDiscountText = () => {
+    if (!cart?.appliedCoupon) return "";
+
+    if (cart.appliedCoupon.discountType === "percentage") {
+      return isRTL
+        ? `خصم ${cart.appliedCoupon.discountValue}%`
+        : `${cart.appliedCoupon.discountValue}% off`;
+    }
+
+    return isRTL
+      ? `خصم ${formatCurrency(cart.appliedCoupon.discountValue)}`
+      : `${formatCurrency(cart.appliedCoupon.discountValue)} off`;
+  };
 
   const handleValidateCart = useCallback(async () => {
     const result = await validateCartMutation.mutateAsync();
@@ -338,9 +360,7 @@ function CartItems({ translations, locale }: CartItemsProps) {
                   {cart.appliedCoupon.code}
                 </p>
                 <p className="text-sm text-green-600">
-                  {cart.appliedCoupon.discountType === "percentage"
-                    ? `${cart.appliedCoupon.discountValue}% off`
-                    : `${formatCurrency(cart.appliedCoupon.discountValue)} off`}
+                  {getCouponDiscountText()}
                 </p>
               </div>
               <Button
@@ -433,7 +453,7 @@ function CartItems({ translations, locale }: CartItemsProps) {
                   {formatCurrency(
                     calculations.productDiscount + calculations.couponDiscount
                   )}
-                  ! 🎉
+                  !
                 </p>
               </div>
             )}
@@ -489,7 +509,7 @@ function CartItemRow({
   const product = item.product;
   if (!product) return null;
 
-  const productName = isRTL ? product.productNameAr : product.productNameEn;
+  const productName = getProductName(product, locale);
   const effectivePrice =
     item.discountedPrice > 0 ? item.discountedPrice : item.price;
   const hasDiscount =
@@ -537,7 +557,7 @@ function CartItemRow({
               href={`/${locale}/products/${product.productSlug || product._id}`}
               className="font-semibold hover:underline line-clamp-2"
             >
-              {productName || "Unknown Product"}
+              {productName || (isRTL ? "منتج غير معروف" : "Unknown Product")}
             </Link>
 
             <div className="flex flex-wrap gap-2 text-sm text-gray-500">

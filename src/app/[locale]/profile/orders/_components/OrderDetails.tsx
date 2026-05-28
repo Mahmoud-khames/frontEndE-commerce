@@ -30,6 +30,7 @@ import {
   ShoppingBag,
 } from "lucide-react";
 import { format } from "date-fns";
+import { getProductName as getLocalizedProductName } from "@/lib/localized";
 
 interface OrderDetailsProps {
   order: any;
@@ -97,9 +98,7 @@ export default function OrderDetails({
 
   const getProductName = (item: any) => {
     if (!item.product) return isRTL ? "منتج" : "Product";
-    return isRTL
-      ? item.product.productNameAr || item.product.productNameEn
-      : item.product.productNameEn || item.product.productNameAr;
+    return getLocalizedProductName(item.product, locale);
   };
 
   const formatShippingAddress = (address: any): string => {

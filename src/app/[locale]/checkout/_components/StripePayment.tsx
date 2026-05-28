@@ -8,6 +8,11 @@ import { createStripeCheckoutSession } from "@/server";
 import { getCartSummary } from "@/lib/cart";
 import toast from "react-hot-toast";
 import { Loader2, CreditCard, Lock } from "lucide-react";
+import {
+  getProductDescription,
+  getProductName,
+} from "@/lib/localized";
+import { getSafeErrorMessage } from "@/lib/apiError";
 
 interface ShippingAddress {
   fullName: string;
@@ -87,9 +92,7 @@ export default function StripePayment({
       const items = cartItems.map((item: any) => {
         const product = item.product;
         const price = item.discountedPrice > 0 ? item.discountedPrice : item.price;
-        const name = isRTL
-          ? product?.productNameAr || product?.productNameEn
-          : product?.productNameEn || product?.productNameAr;
+        const name = getProductName(product, locale, "Product");
 
         return {
           id: product?._id,
@@ -97,9 +100,7 @@ export default function StripePayment({
           price: price || 0,
           quantity: item.quantity || 1,
           image: product?.productImage || "",
-          description: isRTL
-            ? product?.productDescriptionAr?.substring(0, 100)
-            : product?.productDescriptionEn?.substring(0, 100),
+          description: getProductDescription(product, locale).substring(0, 100),
         };
       });
 
@@ -122,9 +123,12 @@ export default function StripePayment({
         toast.error(t.checkout?.paymentError || "Failed to initiate payment");
       }
     } catch (error: any) {
-      console.error("Stripe checkout error:", error);
       toast.error(
-        error.response?.data?.message || t.checkout?.paymentError || "Payment failed"
+        getSafeErrorMessage(
+          error,
+          locale,
+          t.checkout?.paymentError || "Payment failed"
+        )
       );
     } finally {
       setLoading(false);

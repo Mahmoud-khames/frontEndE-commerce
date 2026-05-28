@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 // import { useRouter } from "next/navigation";
 import {
   Dialog,
@@ -32,6 +32,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Edit, Loader2, Upload } from "lucide-react";
+import { getCategoryDescription } from "@/lib/localized";
 
 export default function EditCategory({
   t,
@@ -50,6 +51,7 @@ export default function EditCategory({
     category.image ? `${category.image}` : null
   );
   const [categoryImage, setCategoryImage] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const isSubmitting = updateCategoryMutation.isPending;
 
   const categorySchema = z.object({
@@ -72,9 +74,9 @@ export default function EditCategory({
     defaultValues: {
       nameEn: category.nameEn || "",
       nameAr: category.nameAr || "",
-      descriptionEn: category.descriptionEn || category.description || "",
-      descriptionAr: category.descriptionAr || category.description || "",
-      status: category.status,
+      descriptionEn: getCategoryDescription(category, "en"),
+      descriptionAr: getCategoryDescription(category, "ar"),
+      status: category.status ?? true,
       image: null,
     },
   });
@@ -247,6 +249,7 @@ export default function EditCategory({
                         </div>
                       )}
                       <Input
+                        ref={fileInputRef}
                         type="file"
                         accept="image/*"
                         onChange={handleImageChange}
@@ -255,13 +258,7 @@ export default function EditCategory({
                       <Button
                         variant="outline"
                         type="button"
-                        onClick={() => {
-                          const input =
-                            document.querySelector<HTMLInputElement>(
-                              'input[type="file"]'
-                            );
-                          input?.click();
-                        }}
+                        onClick={() => fileInputRef.current?.click()}
                       >
                         {t.admin.uploadImage}
                       </Button>

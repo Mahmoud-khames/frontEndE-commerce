@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { productService } from '../services';
 import type { ProductFilters } from '../types';
 import toast from 'react-hot-toast';
+import { getSafeErrorMessage } from '@/lib/apiError';
 
 export const useProducts = (params?: ProductFilters) => {
   return useQuery({
@@ -79,6 +80,9 @@ export const useCreateProduct = () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
       toast.success(data.message || 'Product created successfully');
     },
+    onError: (error) => {
+      toast.error(getSafeErrorMessage(error, 'en', 'Failed to create product'));
+    },
   });
 };
 
@@ -93,6 +97,9 @@ export const useUpdateProduct = () => {
       queryClient.invalidateQueries({ queryKey: ['product'] });
       toast.success(data.message || 'Product updated successfully');
     },
+    onError: (error) => {
+      toast.error(getSafeErrorMessage(error, 'en', 'Failed to update product'));
+    },
   });
 };
 
@@ -104,6 +111,9 @@ export const useDeleteProduct = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
       toast.success(data.message || 'Product deleted successfully');
+    },
+    onError: (error) => {
+      toast.error(getSafeErrorMessage(error, 'en', 'Failed to delete product'));
     },
   });
 };

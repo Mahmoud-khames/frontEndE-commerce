@@ -7,6 +7,12 @@ import { authService } from "@/services/authService";
 import type { User, LoginCredentials, RegisterData } from "@/types";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
+import { getSafeErrorMessage } from "@/lib/apiError";
+
+const getBrowserLocale = () =>
+  typeof window !== "undefined" && window.location.pathname.startsWith("/ar")
+    ? "ar"
+    : "en";
 
 interface AuthContextType {
   user: User | null;
@@ -86,7 +92,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       router.push("/");
     },
     onError: (error: any) => {
-      toast.error(error.message || "فشل تسجيل الدخول");
+      toast.error(
+        getSafeErrorMessage(error, getBrowserLocale(), "Login failed")
+      );
     },
   });
 
@@ -105,7 +113,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       router.push("/");
     },
     onError: (error: any) => {
-      toast.error(error.message || "فشل إنشاء الحساب");
+      toast.error(
+        getSafeErrorMessage(error, getBrowserLocale(), "Registration failed")
+      );
     },
   });
 
@@ -116,7 +126,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       queryClient.clear();
       toast.success("تم تسجيل الخروج بنجاح");
-      router.push("/login");
+      router.push(`/${getBrowserLocale()}/auth/signin`);
     },
     onError: () => {
       // Even if API fails, clear local data
@@ -125,7 +135,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.removeItem("refreshToken");
       localStorage.removeItem("user");
       queryClient.clear();
-      router.push("/login");
+      router.push(`/${getBrowserLocale()}/auth/signin`);
     },
   });
 

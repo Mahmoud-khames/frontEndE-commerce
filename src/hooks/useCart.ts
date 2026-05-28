@@ -9,6 +9,7 @@ import type {
 } from "@/types";
 import toast from "react-hot-toast";
 import { useCallback } from "react";
+import { getSafeErrorMessage } from "@/lib/apiError";
 
 // Query Keys
 export const cartKeys = {
@@ -51,7 +52,7 @@ export const useAddToCart = () => {
       toast.success(data.message || "Product added to cart");
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to add product");
+      toast.error(getSafeErrorMessage(error, "en", "Failed to add product"));
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: cartKeys.all });
@@ -103,7 +104,7 @@ export const useUpdateCartItem = () => {
       if (context?.previousCart) {
         queryClient.setQueryData(cartKeys.all, context.previousCart);
       }
-      toast.error(error.response?.data?.message || "Failed to update cart");
+      toast.error(getSafeErrorMessage(error, "en", "Failed to update cart"));
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: cartKeys.all });
@@ -147,7 +148,7 @@ export const useRemoveFromCart = () => {
       if (context?.previousCart) {
         queryClient.setQueryData(cartKeys.all, context.previousCart);
       }
-      toast.error(error.response?.data?.message || "Failed to remove product");
+      toast.error(getSafeErrorMessage(error, "en", "Failed to remove product"));
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: cartKeys.all });
@@ -166,7 +167,7 @@ export const useClearCart = () => {
       toast.success(data.message || "Cart cleared");
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to clear cart");
+      toast.error(getSafeErrorMessage(error, "en", "Failed to clear cart"));
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: cartKeys.all });
@@ -191,7 +192,7 @@ export const useApplyCoupon = () => {
       }
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Invalid coupon code");
+      toast.error(getSafeErrorMessage(error, "en", "Invalid coupon code"));
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: cartKeys.all });
@@ -210,7 +211,7 @@ export const useRemoveCoupon = () => {
       toast.success(data.message || "Coupon removed");
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to remove coupon");
+      toast.error(getSafeErrorMessage(error, "en", "Failed to remove coupon"));
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: cartKeys.all });
@@ -230,7 +231,7 @@ export const useValidateCart = () => {
       }
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Cart validation failed");
+      toast.error(getSafeErrorMessage(error, "en", "Cart validation failed"));
     },
   });
 };
@@ -249,7 +250,7 @@ export const useMergeGuestCart = () => {
       localStorage.removeItem("guestCart");
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to merge carts");
+      toast.error(getSafeErrorMessage(error, "en", "Failed to merge carts"));
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: cartKeys.all });

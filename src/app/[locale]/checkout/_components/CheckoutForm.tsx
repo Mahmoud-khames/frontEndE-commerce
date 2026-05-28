@@ -16,6 +16,7 @@ import toast from "react-hot-toast";
 import StripePayment from "./StripePayment";
 import { Loader2, MapPin, Phone, User, CreditCard, Truck, Banknote } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getSafeErrorMessage } from "@/lib/apiError";
 
 interface ShippingAddress {
   fullName: string;
@@ -140,8 +141,13 @@ export default function CheckoutForm({ t, locale }: CheckoutFormProps) {
         toast.error(response.data?.message || t.checkout?.orderError || "Failed to place order");
       }
     } catch (error: any) {
-      console.error("Order creation error:", error);
-      toast.error(error.response?.data?.message || t.checkout?.orderError || "Failed to place order");
+      toast.error(
+        getSafeErrorMessage(
+          error,
+          locale,
+          t.checkout?.orderError || "Failed to place order"
+        )
+      );
     } finally {
       setLoading(false);
     }

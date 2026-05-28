@@ -6,6 +6,8 @@ import { Product } from "@/types";
 import { toast } from "react-hot-toast";
 import { useCallback } from "react";
 import { useWishlist, useAddToWishlist, useRemoveFromWishlist } from "@/hooks";
+import { getSafeErrorMessage } from "@/lib/apiError";
+import { getProductName } from "@/lib/localized";
 
 export default function AddToWishlist({ product }: { product: Product }) {
   const { data: wishlistData } = useWishlist();
@@ -14,23 +16,24 @@ export default function AddToWishlist({ product }: { product: Product }) {
 
   const wishlist = wishlistData?.data?.wishlist || [];
   const isInWishlist = wishlist.some((item) => item._id === product._id);
+  const displayName = getProductName(product, "en");
 
   const handleToggleWishlist = useCallback(async () => {
     try {
       if (isInWishlist) {
         await removeFromWishlistMutation.mutateAsync(product._id);
-        toast.success(`${product.productName} removed from wishlist!`);
+        toast.success(`${displayName} removed from wishlist`);
       } else {
         await addToWishlistMutation.mutateAsync(product._id);
-        toast.success(`${product.productName} added to wishlist!`);
+        toast.success(`${displayName} added to wishlist`);
       }
     } catch (error) {
-      toast.error("Failed to update wishlist");
-      console.error(error);
+      toast.error(getSafeErrorMessage(error, "en", "Failed to update wishlist"));
     }
   }, [
     isInWishlist,
     product,
+    displayName,
     addToWishlistMutation,
     removeFromWishlistMutation,
   ]);
@@ -44,8 +47,8 @@ export default function AddToWishlist({ product }: { product: Product }) {
       }`}
       aria-label={
         isInWishlist
-          ? `Remove ${product.productName} from Wishlist`
-          : `Add ${product.productName} to Wishlist`
+          ? `Remove ${displayName} from Wishlist`
+          : `Add ${displayName} to Wishlist`
       }
     >
       <Heart className={`h-4 w-4 ${isInWishlist ? "fill-current" : ""}`} />

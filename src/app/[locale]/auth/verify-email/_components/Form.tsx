@@ -3,10 +3,11 @@
 import { Button } from '@/components/ui/button';
 import { Routes } from '@/constants/enums';
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { Loader2 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from '@/components/link';
+import axiosInstance from '@/lib/axios';
+import { getSafeErrorMessage } from '@/lib/apiError';
 
 interface FormProps {
   locale: string;
@@ -43,7 +44,7 @@ export default function Form({ locale, t }: FormProps) {
     }
 
     try {
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/verify-email`, { 
+      const response = await axiosInstance.post('/api/auth/verify-email', {
         email,
         code: verificationCode
       });
@@ -58,7 +59,7 @@ export default function Form({ locale, t }: FormProps) {
         setError(response.data.error || 'Failed to verify email');
       }
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Something went wrong');
+      setError(getSafeErrorMessage(err, locale, 'Something went wrong'));
     } finally {
       setIsLoading(false);
     }

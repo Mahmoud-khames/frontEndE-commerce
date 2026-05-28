@@ -13,7 +13,7 @@ export async function generateMetadata({
   params: Promise<{ locale: Locale }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  const { t } = await getTrans(locale);
+  const { t } = (await getTrans(locale)) as any;
   const isRTL = locale === "ar";
 
   return {

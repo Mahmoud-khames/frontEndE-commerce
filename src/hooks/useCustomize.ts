@@ -6,6 +6,7 @@ import {
   CustomizeQueryParams,
 } from "@/services/customizeService";
 import type { Customize, SliderType } from "@/types";
+import { getSafeErrorMessage } from "@/lib/apiError";
 
 // ==================== Query Keys ====================
 export const customizeKeys = {
@@ -87,9 +88,7 @@ export const useCreateSlide = () => {
       toast.success(data.message || "Slide created successfully");
     },
     onError: (error: any) => {
-      toast.error(
-        error.response?.data?.message || error.message || "Failed to create slide"
-      );
+      toast.error(getSafeErrorMessage(error, "en", "Failed to create slide"));
     },
   });
 };
@@ -111,9 +110,7 @@ export const useUpdateSlide = () => {
       toast.success(data.message || "Slide updated successfully");
     },
     onError: (error: any) => {
-      toast.error(
-        error.response?.data?.message || error.message || "Failed to update slide"
-      );
+      toast.error(getSafeErrorMessage(error, "en", "Failed to update slide"));
     },
   });
 };
@@ -131,9 +128,7 @@ export const useDeleteSlide = () => {
       toast.success(data.message || "Slide deleted successfully");
     },
     onError: (error: any) => {
-      toast.error(
-        error.response?.data?.message || error.message || "Failed to delete slide"
-      );
+      toast.error(getSafeErrorMessage(error, "en", "Failed to delete slide"));
     },
   });
 };
@@ -151,9 +146,7 @@ export const useAddImage = () => {
       toast.success(data.message || "Image added successfully");
     },
     onError: (error: any) => {
-      toast.error(
-        error.response?.data?.message || error.message || "Failed to add image"
-      );
+      toast.error(getSafeErrorMessage(error, "en", "Failed to add image"));
     },
   });
 };
@@ -172,9 +165,7 @@ export const useDeleteImage = () => {
       toast.success(data.message || "Image deleted successfully");
     },
     onError: (error: any) => {
-      toast.error(
-        error.response?.data?.message || error.message || "Failed to delete image"
-      );
+      toast.error(getSafeErrorMessage(error, "en", "Failed to delete image"));
     },
   });
 };
@@ -198,11 +189,7 @@ export const useReorderImages = () => {
       toast.success(data.message || "Images reordered successfully");
     },
     onError: (error: any) => {
-      toast.error(
-        error.response?.data?.message ||
-          error.message ||
-          "Failed to reorder images"
-      );
+      toast.error(getSafeErrorMessage(error, "en", "Failed to reorder images"));
     },
   });
 };
@@ -220,11 +207,7 @@ export const useToggleActiveStatus = () => {
       toast.success(data.message || "Status toggled successfully");
     },
     onError: (error: any) => {
-      toast.error(
-        error.response?.data?.message ||
-          error.message ||
-          "Failed to toggle status"
-      );
+      toast.error(getSafeErrorMessage(error, "en", "Failed to toggle status"));
     },
   });
 };
@@ -243,11 +226,7 @@ export const useReorderSlides = () => {
       toast.success(data.message || "Slides reordered successfully");
     },
     onError: (error: any) => {
-      toast.error(
-        error.response?.data?.message ||
-          error.message ||
-          "Failed to reorder slides"
-      );
+      toast.error(getSafeErrorMessage(error, "en", "Failed to reorder slides"));
     },
   });
 };
@@ -265,11 +244,7 @@ export const useDuplicateSlide = () => {
       toast.success(data.message || "Slide duplicated successfully");
     },
     onError: (error: any) => {
-      toast.error(
-        error.response?.data?.message ||
-          error.message ||
-          "Failed to duplicate slide"
-      );
+      toast.error(getSafeErrorMessage(error, "en", "Failed to duplicate slide"));
     },
   });
 };

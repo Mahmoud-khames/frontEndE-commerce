@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { couponService } from "@/services/couponService";
 import type { CreateCouponPayload, PaginationParams } from "@/types";
 import toast from "react-hot-toast";
+import { getSafeErrorMessage } from "@/lib/apiError";
 
 // Query Keys
 export const couponKeys = {
@@ -87,9 +88,7 @@ export const useCreateCoupon = () => {
       toast.success(data.message || "Coupon created successfully");
     },
     onError: (error: any) => {
-      toast.error(
-        error.response?.data?.message || "Failed to create coupon"
-      );
+      toast.error(getSafeErrorMessage(error, "en", "Failed to create coupon"));
     },
   });
 };
@@ -108,9 +107,7 @@ export const useUpdateCoupon = () => {
       toast.success(data.message || "Coupon updated successfully");
     },
     onError: (error: any) => {
-      toast.error(
-        error.response?.data?.message || "Failed to update coupon"
-      );
+      toast.error(getSafeErrorMessage(error, "en", "Failed to update coupon"));
     },
   });
 };
@@ -127,9 +124,7 @@ export const useDeleteCoupon = () => {
       toast.success(data.message || "Coupon deleted successfully");
     },
     onError: (error: any) => {
-      toast.error(
-        error.response?.data?.message || "Failed to delete coupon"
-      );
+      toast.error(getSafeErrorMessage(error, "en", "Failed to delete coupon"));
     },
   });
 };
@@ -146,9 +141,7 @@ export const useToggleCouponStatus = () => {
       toast.success(data.message || "Coupon status updated");
     },
     onError: (error: any) => {
-      toast.error(
-        error.response?.data?.message || "Failed to update status"
-      );
+      toast.error(getSafeErrorMessage(error, "en", "Failed to update status"));
     },
   });
 };
@@ -164,9 +157,7 @@ export const useDuplicateCoupon = () => {
       toast.success(data.message || "Coupon duplicated successfully");
     },
     onError: (error: any) => {
-      toast.error(
-        error.response?.data?.message || "Failed to duplicate coupon"
-      );
+      toast.error(getSafeErrorMessage(error, "en", "Failed to duplicate coupon"));
     },
   });
 };
@@ -198,9 +189,7 @@ export const useApplyCouponToOrder = () => {
       toast.success(data.message || "Coupon applied successfully");
     },
     onError: (error: any) => {
-      toast.error(
-        error.response?.data?.message || "Failed to apply coupon"
-      );
+      toast.error(getSafeErrorMessage(error, "en", "Failed to apply coupon"));
     },
   });
 };

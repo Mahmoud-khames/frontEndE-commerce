@@ -4,6 +4,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import getTrans from "@/lib/translation";
+import type { Locale } from "@/i18n.config";
 
 interface TimeLeft {
   days: number;
@@ -34,10 +35,9 @@ export default function Timer({ initialTime, progress, onEnd }: TimerProps) {
   useEffect(() => {
     const fetchTranslations = async () => {
       try {
-        const trans = await getTrans(locale as string);
+        const trans = await getTrans((locale === "ar" ? "ar" : "en") as Locale);
         setTranslations(trans.t);
-      } catch (error) {
-        console.error("Error fetching translations:", error);
+      } catch {
         setTranslations({
           timer: {
             days: "Days",

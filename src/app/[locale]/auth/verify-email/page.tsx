@@ -7,9 +7,10 @@ import { Locale } from "@/i18n.config";
 export default async function Page({
   params,
 }: {
-  params: { locale: Locale };
+  params: Promise<{ locale: string }>;
 }) {
-  const locale = params.locale;
+  const { locale: localeParam } = await params;
+  const locale = localeParam as Locale;
   const { t } = await getTrans(locale);
   return (
     <div className="flex items-center justify-between py-10 min-h-screen gap-10">
@@ -29,8 +30,13 @@ export default async function Page({
         <div className="flex flex-col items-start justify-start w-full lg:w-1/3 gap-8">
           {/* Title and Description */}
           <div>
-            <h2 className="text-3xl font-bold leading-tight">{t.auth.verifyEmail || "Verify Your Email"}</h2>
-            <p className="text-gray-500 mt-2">{t.auth.enterVerificationCode || "Please enter the verification code sent to your email"}</p>
+            <h2 className="text-3xl font-bold leading-tight">
+              {(t.auth as any).verifyEmail || "Verify Your Email"}
+            </h2>
+            <p className="text-gray-500 mt-2">
+              {(t.auth as any).enterVerificationCode ||
+                "Please enter the verification code sent to your email"}
+            </p>
           </div>
 
           {/* Form */}

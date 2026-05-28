@@ -4,6 +4,7 @@ import { orderService } from "../services";
 import type { CreateOrderPayload, PaginationParams } from "../types";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
+import { getSafeErrorMessage } from "@/lib/apiError";
 
 interface OrderParams extends PaginationParams {
   status?: string;
@@ -112,7 +113,7 @@ export const useUpdateOrderStatus = () => {
     },
     onError: (error: any) => {
       toast.error(
-        error.response?.data?.message || "Failed to update order status"
+        getSafeErrorMessage(error, "en", "Failed to update order status")
       );
     },
   });
@@ -128,7 +129,7 @@ export const useDeleteOrder = () => {
       toast.success(data.message || "Order deleted successfully");
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to delete order");
+      toast.error(getSafeErrorMessage(error, "en", "Failed to delete order"));
     },
   });
 };

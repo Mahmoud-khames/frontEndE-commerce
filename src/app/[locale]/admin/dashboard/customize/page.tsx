@@ -10,13 +10,12 @@ export const metadata: Metadata = {
 };
 
 interface CustomizePageProps {
-  params: {
-    locale: Locale;
-  };
+  params: Promise<{ locale: string }>;
 }
 
 export default async function CustomizePage({ params }: CustomizePageProps) {
-  const { locale } = params;
+  const { locale: localeParam } = await params;
+  const locale = localeParam as Locale;
   const { t } = await getTrans(locale);
 
   return (

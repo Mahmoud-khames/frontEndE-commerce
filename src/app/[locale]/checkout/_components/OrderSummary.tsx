@@ -23,7 +23,8 @@ import {
   Gift,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import toast from "react-hot-toast";
+import { getSafeErrorMessage } from "@/lib/apiError";
+import { getProductName as getLocalizedProductName } from "@/lib/localized";
 
 interface OrderSummaryProps {
   t: any;
@@ -63,7 +64,13 @@ export default function OrderSummary({ t, locale }: OrderSummaryProps) {
     setCouponError("");
     applyCoupon(couponCode.trim().toUpperCase(), {
       onError: (error: any) => {
-        setCouponError(error.response?.data?.message || "Invalid coupon");
+        setCouponError(
+          getSafeErrorMessage(
+            error,
+            locale,
+            isRTL ? "كوبون غير صالح" : "Invalid coupon"
+          )
+        );
       },
     });
   };
@@ -78,10 +85,22 @@ export default function OrderSummary({ t, locale }: OrderSummaryProps) {
   };
 
   const getProductName = (item: any) => {
-    if (!item.product) return "Unknown Product";
+    if (!item.product) return isRTL ? "منتج غير معروف" : "Unknown Product";
+    return getLocalizedProductName(item.product, locale);
+  };
+
+  const getCouponDiscountText = () => {
+    if (!appliedCoupon) return "";
+
+    if (appliedCoupon.discountType === "percentage") {
+      return isRTL
+        ? `خصم ${appliedCoupon.discountValue}%`
+        : `${appliedCoupon.discountValue}% off`;
+    }
+
     return isRTL
-      ? item.product.productNameAr || item.product.productNameEn
-      : item.product.productNameEn || item.product.productNameAr;
+      ? `خصم ${formatCurrency(appliedCoupon.discountValue)}`
+      : `${formatCurrency(appliedCoupon.discountValue)} off`;
   };
 
   if (isLoading) {
@@ -237,9 +256,7 @@ export default function OrderSummary({ t, locale }: OrderSummaryProps) {
                     {appliedCoupon.code}
                   </span>
                   <p className="text-xs text-green-600">
-                    {appliedCoupon.discountType === "percentage"
-                      ? `${appliedCoupon.discountValue}% off`
-                      : `$${appliedCoupon.discountValue} off`}
+                    {getCouponDiscountText()}
                   </p>
                 </div>
               </div>
@@ -329,7 +346,7 @@ export default function OrderSummary({ t, locale }: OrderSummaryProps) {
           {(summary.productDiscount > 0 || summary.couponDiscount > 0) && (
             <div className="text-center p-2 bg-green-50 rounded-lg">
               <span className="text-green-700 text-sm font-medium">
-                🎉 {isRTL ? "وفرت" : "You saved"}{" "}
+                {isRTL ? "وفرت" : "You saved"}{" "}
                 {formatCurrency(summary.productDiscount + summary.couponDiscount)}!
               </span>
             </div>

@@ -7,20 +7,14 @@ import useFormFields from "@/hooks/useFormFields"; // Fixed path
 import { useForgotPassword } from "@/hooks/useAuth";
 import React, { useState } from "react";
 import { Loader2 } from "lucide-react";
-
-interface Translation {
-  auth: {
-    forgotPassword: string;
-  };
-  [key: string]: string | { forgotPassword: string };
-}
+import { getSafeErrorMessage } from "@/lib/apiError";
 
 interface FormProps {
   locale: string;
-  t: Translation;
+  t: any;
 }
 
-export default function Form({ t }: FormProps) {
+export default function Form({ locale, t }: FormProps) {
   const forgotPasswordMutation = useForgotPassword();
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -45,9 +39,7 @@ export default function Form({ t }: FormProps) {
       },
       onError: (err: any) => {
         setError(
-          err.response?.data?.error ||
-            err.message ||
-            "Failed to send reset link"
+          getSafeErrorMessage(err, locale, "Failed to send reset link")
         );
       },
     });

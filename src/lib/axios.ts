@@ -5,14 +5,16 @@ import axios, {
   InternalAxiosRequestConfig,
 } from "axios";
 import type { ApiError } from "../types";
+import { normalizeApiError } from "./apiError";
 
 const getCurrentLanguage = (): string => {
   if (typeof window !== "undefined") {
     const path = window.location.pathname;
     if (path.startsWith("/ar") || path === "/ar") return "ar";
     if (path.startsWith("/en") || path === "/en") return "en";
+    return window.localStorage.getItem("language") || "en";
   }
-  return localStorage.getItem("language") || "en";
+  return "en";
 };
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
@@ -28,7 +30,8 @@ const axiosInstance: AxiosInstance = axios.create({
 // Request Interceptor
 axiosInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem("token");
+    const token =
+      typeof window !== "undefined" ? window.localStorage.getItem("token") : "";
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -59,14 +62,17 @@ axiosInstance.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const refreshToken = localStorage.getItem("refreshToken");
+        const refreshToken =
+          typeof window !== "undefined"
+            ? window.localStorage.getItem("refreshToken")
+            : "";
         if (refreshToken) {
           const response = await axios.post(`${BASE_URL}/api/auth/refresh`, {
             refreshToken,
           });
 
           const { token } = response.data;
-          localStorage.setItem("token", token);
+          window.localStorage.setItem("token", token);
 
           if (originalRequest.headers) {
             originalRequest.headers.Authorization = `Bearer ${token}`;
@@ -74,19 +80,16 @@ axiosInstance.interceptors.response.use(
           return axiosInstance(originalRequest);
         }
       } catch {
-        localStorage.removeItem("token");
-        localStorage.removeItem("refreshToken");
-        localStorage.removeItem("user");
-        window.location.href = "/login";
+        if (typeof window !== "undefined") {
+          window.localStorage.removeItem("token");
+          window.localStorage.removeItem("refreshToken");
+          window.localStorage.removeItem("user");
+          window.location.href = `/${getCurrentLanguage()}/auth/signin`;
+        }
       }
     }
 
-    const apiError: ApiError = {
-      message:
-        error.response?.data?.message || error.message || "An error occurred",
-      status: error.response?.status,
-      data: error.response?.data,
-    };
+    const apiError: ApiError = normalizeApiError(error, getCurrentLanguage());
 
     return Promise.reject(apiError);
   }

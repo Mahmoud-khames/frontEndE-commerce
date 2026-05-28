@@ -6,6 +6,12 @@ import { Product } from "@/types";
 import { useParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { useCallback, useState } from "react";
+import {
+  getProductColors,
+  getProductName,
+  getProductSizes,
+} from "@/lib/localized";
+import { getSafeErrorMessage } from "@/lib/apiError";
 
 export default function AddToCart({
   product,
@@ -26,22 +32,17 @@ export default function AddToCart({
   const [isLoading, setIsLoading] = useState(false);
 
   const handleAddToCart = useCallback(async () => {
+    const lang = locale === "ar" ? "ar" : "en";
+    const sizes = getProductSizes(product, lang);
+    const colors = getProductColors(product, lang);
+
     if (disabled) {
-      // Check if sizes or colors are required but not selected
-      if (
-        product.productSizes &&
-        product.productSizes.length > 0 &&
-        !selectedSize
-      ) {
-        toast.error("Please select a size");
+      if (sizes.length > 0 && !selectedSize) {
+        toast.error(lang === "ar" ? "من فضلك اختر المقاس" : "Please select a size");
         return;
       }
-      if (
-        product.productColors &&
-        product.productColors.length > 0 &&
-        !selectedColor
-      ) {
-        toast.error("Please select a color");
+      if (colors.length > 0 && !selectedColor) {
+        toast.error(lang === "ar" ? "من فضلك اختر اللون" : "Please select a color");
         return;
       }
     }
@@ -50,7 +51,11 @@ export default function AddToCart({
       setIsLoading(true);
 
       if (!isAuthenticated) {
-        toast.error("Please log in to add items to cart");
+        toast.error(
+          lang === "ar"
+            ? "من فضلك سجل الدخول لإضافة منتجات للسلة"
+            : "Please log in to add items to cart"
+        );
         return;
       }
 
@@ -61,10 +66,19 @@ export default function AddToCart({
         color: selectedColor,
       });
 
-      toast.success(`${product.productName} added to cart!`);
+      toast.success(
+        lang === "ar"
+          ? `تمت إضافة ${getProductName(product, lang)} إلى السلة`
+          : `${getProductName(product, lang)} added to cart`
+      );
     } catch (error) {
-      toast.error("Failed to add to cart");
-      console.error(error);
+      toast.error(
+        getSafeErrorMessage(
+          error,
+          lang,
+          lang === "ar" ? "تعذر إضافة المنتج للسلة" : "Failed to add to cart"
+        )
+      );
     } finally {
       setIsLoading(false);
     }
@@ -76,6 +90,7 @@ export default function AddToCart({
     disabled,
     isAuthenticated,
     addToCartMutation,
+    locale,
   ]);
 
   return (

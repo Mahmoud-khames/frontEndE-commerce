@@ -14,6 +14,8 @@ export interface ApiResponse<T = unknown> {
   error?: string;
 }
 
+export type LocalizedField<T = string> = T | { en?: T; ar?: T };
+
 export interface PaginationParams {
   page?: number;
   limit?: number;
@@ -81,10 +83,10 @@ export interface Category {
   _id: string;
   nameEn: string;
   nameAr: string;
-  name?: string; // Localized
+  name?: LocalizedField; // Localized
   descriptionEn?: string;
   descriptionAr?: string;
-  description?: string; // Localized
+  description?: LocalizedField; // Localized
   slug: string;
   image?: string;
   status: boolean;
@@ -115,10 +117,12 @@ export interface Product {
   _id: string;
   productNameEn: string;
   productNameAr: string;
-  productName?: string; // Localized
+  productName?: LocalizedField; // Localized
+  name?: LocalizedField;
   productDescriptionEn: string;
   productDescriptionAr: string;
-  productDescription?: string; // Localized
+  productDescription?: LocalizedField; // Localized
+  description?: LocalizedField;
   productPrice: number;
   oldProductPrice: number;
   productImage: string;
@@ -130,10 +134,12 @@ export interface Product {
   productRating: number;
   productColorsEn?: string[];
   productColorsAr?: string[];
-  productColors?: string[]; // Localized
+  productColors?: LocalizedField<string[]>; // Localized
+  colors?: LocalizedField<string[]>;
   productSizesEn?: string[];
   productSizesAr?: string[];
-  productSizes?: string[]; // Localized
+  productSizes?: LocalizedField<string[]>; // Localized
+  sizes?: LocalizedField<string[]>;
   hasActiveDiscount: boolean;
   productDiscountPrice: number;
   productDiscountPercentage: number;
@@ -183,6 +189,7 @@ export interface ProductFilters {
     | "name-asc"
     | "name-desc"
     | "discount"
+    | "popular"
     | "rating";
   discount?: boolean | string;
   new?: boolean | string;
@@ -201,6 +208,7 @@ export interface AvailableFilters {
     count: number;
     nameEn?: string;
     nameAr?: string;
+    name?: LocalizedField;
   }>;
   counts: {
     total: number;
@@ -242,6 +250,7 @@ export interface CartItem {
   discountedPrice: number;
   productNameEn?: string;
   productNameAr?: string;
+  productName?: LocalizedField;
   productImage?: string;
   isAvailable: boolean;
   stockQuantity?: number;
@@ -332,6 +341,7 @@ export interface OrderItem {
   color?: string | null;
   productNameEn?: string;
   productNameAr?: string;
+  productName?: LocalizedField;
   productImage?: string;
 }
 

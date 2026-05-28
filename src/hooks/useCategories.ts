@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { categoryService } from '../services';
 import toast from 'react-hot-toast';
+import { getSafeErrorMessage } from '@/lib/apiError';
 
 export const useCategories = () => {
   return useQuery({
@@ -41,6 +42,9 @@ export const useCreateCategory = () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] });
       toast.success(data.message || 'Category created successfully');
     },
+    onError: (error) => {
+      toast.error(getSafeErrorMessage(error, 'en', 'Failed to create category'));
+    },
   });
 };
 
@@ -55,6 +59,9 @@ export const useUpdateCategory = () => {
       queryClient.invalidateQueries({ queryKey: ['category'] });
       toast.success(data.message || 'Category updated successfully');
     },
+    onError: (error) => {
+      toast.error(getSafeErrorMessage(error, 'en', 'Failed to update category'));
+    },
   });
 };
 
@@ -66,6 +73,9 @@ export const useDeleteCategory = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['categories'] });
       toast.success(data.message || 'Category deleted successfully');
+    },
+    onError: (error) => {
+      toast.error(getSafeErrorMessage(error, 'en', 'Failed to delete category'));
     },
   });
 };

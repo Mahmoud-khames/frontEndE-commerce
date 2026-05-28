@@ -24,6 +24,7 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { useAuth } from "@/providers/AuthProvider";
 import { authService } from "@/services/authService";
+import { getSafeErrorMessage } from "@/lib/apiError";
 
 interface ProfileFormProps {
   t: any;
@@ -169,7 +170,7 @@ export default function ProfileForm({ t, locale }: ProfileFormProps) {
           form.setValue("confirmPassword", "");
         } catch (passwordError: any) {
           toast.error(
-            passwordError.response?.data?.message || 
+            getSafeErrorMessage(passwordError, locale) ||
             (isRTL ? "فشل تغيير كلمة المرور" : "Failed to change password")
           );
         }
@@ -178,7 +179,7 @@ export default function ProfileForm({ t, locale }: ProfileFormProps) {
       router.refresh();
     } catch (error: any) {
       toast.error(
-        error.response?.data?.message || 
+        getSafeErrorMessage(error, locale) ||
         (isRTL ? "حدث خطأ" : "An error occurred")
       );
     } finally {

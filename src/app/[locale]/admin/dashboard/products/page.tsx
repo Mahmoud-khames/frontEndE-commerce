@@ -5,9 +5,10 @@ import { Locale } from "@/i18n.config";
 export default async function ProductsPage({
   params,
 }: {
-  params: { locale: Locale };
+  params: Promise<{ locale: string }>;
 }) {
-  const locale = params.locale;
+  const { locale: localeParam } = await params;
+  const locale = localeParam as Locale;
   const { t } = await getTrans(locale);
 
   return (

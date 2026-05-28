@@ -7,18 +7,11 @@ import useFormFields from "@/hooks/useFormFields"; // Fixed path
 import { useRegister } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
 import React, { useState } from "react";
-
-// Define Types for Translations
-interface Translation {
-  auth: {
-    createAccount: string;
-  };
-  [key: string]: string | { createAccount: string };
-}
+import { getSafeErrorMessage } from "@/lib/apiError";
 
 interface FormProps {
   locale: string;
-  t: Translation;
+  t: any;
 }
 
 export default function Form({ locale, t }: FormProps) {
@@ -72,9 +65,7 @@ export default function Form({ locale, t }: FormProps) {
         },
         onError: (err: any) => {
           setError(
-            err.response?.data?.message ||
-              err.message ||
-              "Failed to create account"
+            getSafeErrorMessage(err, locale, "Failed to create account")
           );
         },
       }

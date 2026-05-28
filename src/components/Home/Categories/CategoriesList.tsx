@@ -6,19 +6,24 @@ import Slider from "../../Slider";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCategories } from "@/hooks";
 import Image from "next/image";
-import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import { useParams } from "next/navigation";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { getCategoryName } from "@/lib/localized";
 
 export default function CategoriesList() {
-  const router = useRouter();
   const { data: response, isLoading, error } = useCategories();
   const categories = response?.data;
   const { locale } = useParams();
   const isMobile = useIsMobile();
 
-  const handleCategoryClick = (categoryId: string) => {
-    router.push(`/${locale}/products?categories=${categoryId}`);
+  const getCategoryHref = (categoryId: string) => {
+    const params = new URLSearchParams({
+      categories: categoryId,
+      page: "1",
+    });
+
+    return `/${locale}/products?${params.toString()}`;
   };
 
   if (error) {
@@ -62,9 +67,9 @@ export default function CategoriesList() {
                 </div>
               ))
           : categories?.map((category) => (
-              <div
+              <Link
                 key={category._id}
-                onClick={() => handleCategoryClick(category._id)}
+                href={getCategoryHref(category._id)}
                 className="flex flex-col text-black items-center justify-center gap-2 md:gap-4 
                 w-[128px] sm:w-[150px] lg:w-[178px] h-[108px] sm:h-[128px] lg:h-[148px]
                 border border-gray-200 rounded-md bg-white
@@ -74,14 +79,9 @@ export default function CategoriesList() {
                 flex-shrink-0 snap-start group
                 active:scale-[0.98]
                 hover:shadow-md"
-                role="button"
-                tabIndex={0}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    handleCategoryClick(category._id);
-                  }
-                }}
+                aria-label={`${
+                  locale === "ar" ? "عرض منتجات" : "View products in"
+                } ${getCategoryName(category, String(locale))}`}
               >
                 {category.image && (
                   <div className="flex items-center justify-center w-9 h-9 md:w-14 md:h-14 transition-transform group-hover:scale-105">
@@ -97,7 +97,7 @@ export default function CategoriesList() {
                 <p className="text-xs md:text-base font-medium text-center px-2 line-clamp-2">
                   {getCategoryName(category, String(locale))}
                 </p>
-              </div>
+              </Link>
             ))}
       </Slider>
     </div>
